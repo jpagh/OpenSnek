@@ -258,6 +258,9 @@ public struct DeviceProfile: Hashable, Sendable {
     public let usbBrightnessLEDIDs: [UInt8]?
     /// Separate read targets for devices whose whole-device write address cannot be read.
     public let usbBrightnessReadLEDIDs: [UInt8]?
+    public let usbLightingEffectReadLEDID: UInt8?
+    public let usbPollRateProtocol: USBPollRateProtocol
+    public let supportedPollRates: [Int]
     public let isLocallyValidated: Bool
 
     public init(
@@ -265,7 +268,7 @@ public struct DeviceProfile: Hashable, Sendable {
         usbLightingLEDIDs: [UInt8] = [], usbLightingZones: [USBLightingZoneDescriptor] = [], softwareLightingFrameLayout: SoftwareLightingFrameLayout? = nil, supportedSoftwareLightingPresets: [SoftwareLightingPresetID] = [], passiveDPIInput: PassiveDPIInputDescriptor? = nil,
         supportsIndependentXYDPI: Bool = false, supportsScrollModeControls: Bool = false, supportsLightingBrightnessControls: Bool = false, supportsLightingStateReads: Bool = true, usesProjectedDPIStageWriteReadback: Bool = false, onboardProfileSupport: OnboardProfileSupport = .unavailable,
         onboardProfileCount: Int = 1, formFactor: DeviceFormFactor = .mouse, supportsDPIControls: Bool = true, supportsPollRateControls: Bool = true, supportsPowerManagementControls: Bool = true, supportsButtonRemapControls: Bool = true, usbBrightnessLEDIDs: [UInt8]? = nil,
-        usbBrightnessReadLEDIDs: [UInt8]? = nil, isLocallyValidated: Bool = true
+        usbBrightnessReadLEDIDs: [UInt8]? = nil, usbLightingEffectReadLEDID: UInt8? = nil, usbPollRateProtocol: USBPollRateProtocol = .standard, supportedPollRates: [Int] = [125, 500, 1000], isLocallyValidated: Bool = true
     ) {
         self.id = id
         self.productName = productName
@@ -294,6 +297,9 @@ public struct DeviceProfile: Hashable, Sendable {
         self.supportsButtonRemapControls = supportsButtonRemapControls
         self.usbBrightnessLEDIDs = usbBrightnessLEDIDs
         self.usbBrightnessReadLEDIDs = usbBrightnessReadLEDIDs
+        self.usbLightingEffectReadLEDID = usbLightingEffectReadLEDID
+        self.usbPollRateProtocol = usbPollRateProtocol
+        self.supportedPollRates = supportedPollRates
         self.isLocallyValidated = isLocallyValidated
     }
 
@@ -364,6 +370,10 @@ public extension MouseDevice {
         guard showsLightingControls else { return false }
         return resolvedProfile?.supportsLightingBrightnessControls ?? false
     }
+
+    var supportedPollRates: [Int] { resolvedProfile?.supportedPollRates ?? [125, 500, 1000] }
+
+    var supportsOnboardLightingEffectControls: Bool { resolvedProfile.map { !$0.supportedLightingEffects.isEmpty } ?? true }
 
     var usesProjectedDPIStageWriteReadback: Bool { return resolvedProfile?.usesProjectedDPIStageWriteReadback ?? false }
 
@@ -439,6 +449,20 @@ public enum DeviceProfiles {
     ]
 
     public static let basiliskV3ProUSBDocumentedReadOnlySlots = basiliskV3USBFamilyDocumentedReadOnlySlots
+
+    public static let basiliskV4ButtonSlots: [ButtonSlotDescriptor] = basiliskV3XButtonSlots.filter { $0.slot != 96 } + basiliskV3FamilyButtonSlots.filter { [52, 53].contains($0.slot) }
+
+    // Receiver-only bring-up: do not inherit V3 lighting, scroll, or profile commands.
+    public static let basiliskV4USB = DeviceProfile(
+        id: .basiliskV4Hyperspeed, productName: "Basilisk V4 HyperSpeed", transport: .usb, supportedProducts: [0x00EA], usbTransactionID: 0x1F, buttonLayout: ButtonSlotLayout(visibleSlots: basiliskV4ButtonSlots, writableSlots: basiliskV4ButtonSlots.map(\.slot)),
+        supportsAdvancedLightingEffects: true, supportedLightingEffects: [.off, .staticColor, .spectrum, .wave, .pulseRandom, .pulseSingle, .pulseDual], usbLightingLEDIDs: [0x0A], usbLightingZones: [USBLightingZoneDescriptor(id: "underglow", label: "Underglow", ledIDs: [0x0A])],
+        supportsIndependentXYDPI: false, supportsLightingBrightnessControls: true, supportsLightingStateReads: true, supportsPollRateControls: false, usbLightingEffectReadLEDID: 0x0A)
+
+    // Wired exchanges are validated independently; polling uses the extended register.
+    public static let basiliskV4WiredUSB = DeviceProfile(
+        id: .basiliskV4HyperspeedWired, productName: "Basilisk V4 HyperSpeed (Wired)", transport: .usb, supportedProducts: [0x00EB], usbTransactionID: 0x1F, buttonLayout: ButtonSlotLayout(visibleSlots: basiliskV4ButtonSlots, writableSlots: basiliskV4ButtonSlots.map(\.slot)),
+        supportsAdvancedLightingEffects: true, supportedLightingEffects: [.off, .staticColor, .spectrum, .wave, .pulseRandom, .pulseSingle, .pulseDual], usbLightingLEDIDs: [0x0A], usbLightingZones: [USBLightingZoneDescriptor(id: "underglow", label: "Underglow", ledIDs: [0x0A])],
+        supportsLightingBrightnessControls: true, usbLightingEffectReadLEDID: 0x0A, usbPollRateProtocol: .extended, supportedPollRates: [125, 250, 500, 1000])
 
     public static let basiliskV3XUSB = DeviceProfile(
         id: .basiliskV3XHyperspeed, productName: "Basilisk V3 X HyperSpeed", transport: .usb, supportedProducts: [0x00B9], usbTransactionID: 0x1F,
@@ -705,8 +729,8 @@ public enum DeviceProfiles {
         formFactor: .accessory, supportsDPIControls: false, supportsPollRateControls: false, supportsPowerManagementControls: false, supportsButtonRemapControls: false, usbBrightnessLEDIDs: [0x00], isLocallyValidated: false)
 
     public static let all: [DeviceProfile] = [
-        basiliskV3XUSB, basiliskV3USB, basiliskV3ProUSB, basiliskV335KUSB, basiliskV3XBluetooth, basiliskV3ProBluetooth, basiliskV3Pro35KPhantomGreenBluetooth, orochiV2Bluetooth, nagaProUSB, nagaProBluetooth, nagaV2ProUSB, nagaV2ProBluetooth, basiliskUSB, lanceheadTEUSB, huntsmanMiniUSB,
-        tartarusProUSB, mouseDockUSB
+        basiliskV4USB, basiliskV4WiredUSB, basiliskV3XUSB, basiliskV3USB, basiliskV3ProUSB, basiliskV335KUSB, basiliskV3XBluetooth, basiliskV3ProBluetooth, basiliskV3Pro35KPhantomGreenBluetooth, orochiV2Bluetooth, nagaProUSB, nagaProBluetooth, nagaV2ProUSB, nagaV2ProBluetooth, basiliskUSB,
+        lanceheadTEUSB, huntsmanMiniUSB, tartarusProUSB, mouseDockUSB
     ]
 
     public static func resolve(vendorID: Int, productID: Int, transport: DeviceTransportKind) -> DeviceProfile? { all.first(where: { $0.matches(vendorID: vendorID, productID: productID, transport: transport) }) }
@@ -719,6 +743,7 @@ public enum DeviceProfiles {
 
     public static func maximumDPI(for profileID: DeviceProfileID?) -> Int {
         switch profileID {
+        case .basiliskV4Hyperspeed, .basiliskV4HyperspeedWired: return 33_000
         case .basiliskV3XHyperspeed: return 18_000
         case .basiliskV3: return 26_000
         case .basiliskV3Pro: return 30_000
@@ -838,7 +863,7 @@ public enum DeviceProfiles {
     public static func supportsIndependentXYDPI(for profileID: DeviceProfileID?) -> Bool {
         switch profileID {
         case .basiliskV3, .basiliskV3Pro, .basiliskV335K, .basiliskV3Pro35K, .basilisk, .lanceheadTournamentEdition: return true
-        case .basiliskV3XHyperspeed, .orochiV2, .nagaPro, .nagaV2Pro, .huntsmanMini, .tartarusPro, .mouseDock, nil: return false
+        case .basiliskV4Hyperspeed, .basiliskV4HyperspeedWired, .basiliskV3XHyperspeed, .orochiV2, .nagaPro, .nagaV2Pro, .huntsmanMini, .tartarusPro, .mouseDock, nil: return false
         }
     }
 

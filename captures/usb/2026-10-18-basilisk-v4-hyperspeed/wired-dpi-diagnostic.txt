@@ -1,0 +1,14 @@
+Test Suite 'Selected tests' started at 2026-10-18 17:06:10.675.
+Test Suite 'OpenSnekTests.xctest' started at 2026-10-18 17:06:10.676.
+Test Suite 'BasiliskV4DPITests' started at 2026-10-18 17:06:10.676.
+Test Case '-[OpenSnekTests.BasiliskV4DPITests testHardwareUSBStageTransitionsAndExactRestore]' started.
+/Users/jack/Projects/OpenSnek/OpenSnek/Tests/OpenSnekTests/HardwareValidationSession.swift:75: error: -[OpenSnekTests.BasiliskV4DPITests testHardwareUSBStageTransitionsAndExactRestore] : failed: caught error: "Error Domain=HardwareValidation Code=1 "DPI transition mismatch expected=[1000, 2000] active=0 observed=Optional([1000, 2000]) active=Optional(0) scalar=Optional(OpenSnekCore.DpiPair(x: 1000, y: 1200)) raw=[[0, 1, 2, 1, 3, 232, 4, 176, 0, 0, 2, 7, 208, 8, 152, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 3, 232, 4, 176, 0, 0], [1, 1, 2, 1, 3, 232, 4, 176, 0, 0, 2, 7, 208, 8, 152, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 3, 232, 4, 176, 0, 0]]" UserInfo={NSLocalizedDescription=DPI transition mismatch expected=[1000, 2000] active=0 observed=Optional([1000, 2000]) active=Optional(0) scalar=Optional(OpenSnekCore.DpiPair(x: 1000, y: 1200)) raw=[[0, 1, 2, 1, 3, 232, 4, 176, 0, 0, 2, 7, 208, 8, 152, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 3, 232, 4, 176, 0, 0], [1, 1, 2, 1, 3, 232, 4, 176, 0, 0, 2, 7, 208, 8, 152, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 3, 232, 4, 176, 0, 0]]}"
+Test Case '-[OpenSnekTests.BasiliskV4DPITests testHardwareUSBStageTransitionsAndExactRestore]' failed (3.560 seconds).
+Test Suite 'BasiliskV4DPITests' failed at 2026-10-18 17:06:14.236.
+	 Executed 1 test, with 1 failure (1 unexpected) in 3.560 (3.560) seconds
+Test Suite 'OpenSnekTests.xctest' failed at 2026-10-18 17:06:14.236.
+	 Executed 1 test, with 1 failure (1 unexpected) in 3.560 (3.560) seconds
+Test Suite 'Selected tests' failed at 2026-10-18 17:06:14.236.
+	 Executed 1 test, with 1 failure (1 unexpected) in 3.560 (3.561) seconds
+Note: Some test targets reported failures:
+  - OpenSnekTests (XCTest)

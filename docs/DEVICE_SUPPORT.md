@@ -37,6 +37,7 @@ Button remap keyboard actions support modifier chords on shipped USB and Bluetoo
 
 | Device | USB | BT | Biggest Gaps |
 |---|---|---|---|
+| Basilisk V4 HyperSpeed | `Validated` (receiver and wired) | `Not shipped` | DPI/stages, battery/power, nine standard/tilt bindings, underglow brightness and off/static/spectrum/wave/pulse effects; AI/Hypershift remain unmapped, Reactive hidden after physical failure; wired independently validates the same controls plus 125/250/500/1000 Hz polling |
 | Basilisk V3 X HyperSpeed | `Validated` | `Validated` | Bluetooth keeps lighting to static color, hides poll-rate and threshold controls, and leaves the Hypershift/sniper path read-only |
 | Basilisk V3 | `Mapped` | `No transport` | Shares the Basilisk V3 USB family configuration, but remains unvalidated on local hardware |
 | Basilisk V3 Pro | `Validated` | `Validated` | Ships mapped onboard profile CRUD on USB and Bluetooth; Bluetooth keeps lighting static-only, hides poll-rate and threshold controls, and does not ship clutch/profile-button remap |
@@ -50,6 +51,35 @@ Button remap keyboard actions support modifier chords on shipped USB and Bluetoo
 | Huntsman Mini | `Contributor validated` | `No transport` | Keyboard: contributor validated backlight lighting, brightness, and that poll-rate reads return `status 0x05` (unsupported). No DPI hardware; key remap is not mapped |
 | Tartarus Pro | `Contributor validated` | `No transport` | Keypad: contributor validated backlight lighting and brightness (LED `0x00` and `0x05` alias the same register). Analog actuation and key remap have no public protocol; OpenSnek never switches this device into driver mode |
 | Mouse Dock | `Contributor validated` | `No transport` | Accessory: contributor validated single logo-LED static color, brightness, and spectrum/pulse writes over USB. No DPI, buttons, battery, or onboard profiles |
+
+## Basilisk V4 HyperSpeed
+
+The supplied receiver `1532:00EA` and an independently validated wired profile
+`1532:00EB` are registered. Locally validated: DPI/stage
+changed writes and active-stage transitions, standard buttons plus left/right wheel
+tilt (nine slots) including Default, sleep/low-battery settings, underglow brightness
+at LED `0A`, and windowed receiver unplug/replug recovery. Original settings were
+journaled, restored, and verified. The 33,000 DPI ceiling comes from Razer's
+specification; ceiling writes and independent X/Y were not tested.
+
+Lighting supports brightness plus Off, Static color, Spectrum, Wave, and random/
+single/dual-color Pulse. Effect reads hydrate the UI from the device; the original
+cycling effect read as Spectrum. Changed writes require one strict authoritative
+readback. Reactive register reads matched writes but physical rendering failed,
+so Reactive is excluded from both the picker and saved/backend patches. Software
+frames are not claimed. AI Prompt Master and Hypershift remain unmapped, not absent:
+passive input and candidate register reads did not establish safe button identities.
+A Windows Synapse USB capture is required before exposing those remaps. Poll-rate
+controls on the receiver, scroll-mode controls, profile management, and Bluetooth
+are not claimed. Wired `0x00EB` independently supports 125/250/500/1000 Hz polling
+through extended `00:C0/40` registers; standard `00:85` rejects. Wired DPI/stages, battery/power, all nine standard/tilt bindings, brightness and
+seven lighting modes were separately tested through app apply/readback with exact
+original restoration. The owner confirmed the wired UI, original button/tilt
+behavior, and checked lighting rendering. Both direct probes and the app apply
+path verified polling changes and exact original 1000 Hz restoration. Higher rates, measured physical USB cadence, and wired persistence/
+lifecycle remain untested. Power-cycle
+persistence, charging transitions, and closed-window service/sleep recovery remain
+untested. See [evidence and limits](../captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md).
 
 ## Basilisk V3 USB Family Assumptions
 

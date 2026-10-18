@@ -4,6 +4,12 @@ This directory stores BLE protocol captures used to derive and validate `tools/p
 
 ## Layout
 
+- `usb/2026-10-18-basilisk-v4-hyperspeed/`
+  - Supplied receiver `1532:00EA` bring-up: read-only discovery, scoped DPI transitions,
+    nine standard/tilt button remap and Default round-trips, power and underglow
+    brightness changes, exact restored journals, and explicit untested limits.
+  - Retains the initial low-battery-clamp restore failure and verified recovery.
+
 - `ble/filteredcap.pcapng`
   - First broad Synapse BLE capture.
   - Established vendor write/notify framing:

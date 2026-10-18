@@ -44,13 +44,13 @@ struct OnConnectBehaviorCard: View {
 /// Renders the poll rate card UI.
 struct PollRateCard: View {
     let editorStore: EditorStore
-    private let pollRates = [125, 500, 1000]
+    private var pollRates: [Int] { editorStore.deviceStore.selectedDevice?.supportedPollRates ?? [125, 500, 1000] }
 
     var body: some View {
         Card(title: "Polling Rate", accessibilityIdentifier: "poll-rate-card") {
             LabeledControlRow(title: "Rate") {
                 Picker("Rate", selection: Binding(get: { editorStore.editablePollRate }, set: { editorStore.editablePollRate = $0 })) { ForEach(pollRates, id: \.self) { rate in Text("\(rate) Hz").tag(rate).accessibilityIdentifier("poll-rate-option-\(rate)") } }.labelsHidden().pickerStyle(.segmented)
-                    .frame(width: 220, alignment: .trailing).accessibilityLabel("Polling Rate").accessibilityIdentifier("poll-rate-picker")
+                    .fixedSize(horizontal: true, vertical: false).frame(minWidth: 220, alignment: .trailing).accessibilityLabel("Polling Rate").accessibilityIdentifier("poll-rate-picker")
             }
         }.onChange(of: editorStore.editablePollRate) { _, _ in editorStore.scheduleAutoApplyPollRate() }
     }

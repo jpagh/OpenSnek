@@ -1,0 +1,11 @@
+Test Suite 'Selected tests' started at 2026-10-18 16:56:33.606.
+Test Suite 'OpenSnekTests.xctest' started at 2026-10-18 16:56:33.607.
+Test Suite 'BasiliskV4PollingTests' started at 2026-10-18 16:56:33.607.
+Test Case '-[OpenSnekTests.BasiliskV4PollingTests testHardwareWiredPollApplyReadbackAndExactRestore]' started.
+Test Case '-[OpenSnekTests.BasiliskV4PollingTests testHardwareWiredPollApplyReadbackAndExactRestore]' passed (2.452 seconds).
+Test Suite 'BasiliskV4PollingTests' passed at 2026-10-18 16:56:36.059.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.452 (2.452) seconds
+Test Suite 'OpenSnekTests.xctest' passed at 2026-10-18 16:56:36.059.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.452 (2.452) seconds
+Test Suite 'Selected tests' passed at 2026-10-18 16:56:36.059.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.452 (2.453) seconds

@@ -13,6 +13,16 @@ final class DevicePatchUSBCapabilityTests: XCTestCase {
         }
     }
 
+    func testBrightnessOnlyProfileNeverProjectsOrSendsInventedStaticColor() throws {
+        let device = try makeDevice(profile: DeviceProfiles.nagaProUSB)
+        XCTAssertFalse(device.supportsOnboardLightingEffectControls)
+        let patch = makeMixedPatch()
+        let supported = patch.supportedUSBControls(for: device)
+        XCTAssertEqual(supported.ledBrightness, patch.ledBrightness)
+        XCTAssertNil(supported.ledRGB)
+        XCTAssertNil(supported.lightingEffect)
+    }
+
     func testFullyCapableMouseKeepsMixedPatch() throws {
         let patch = makeMixedPatch()
         XCTAssertEqual(patch.supportedUSBControls(for: try makeDevice(profile: DeviceProfiles.basiliskV3ProUSB)), patch)

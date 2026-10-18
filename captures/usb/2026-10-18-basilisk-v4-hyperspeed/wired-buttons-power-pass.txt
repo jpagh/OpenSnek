@@ -1,0 +1,11 @@
+Test Suite 'Selected tests' started at 2026-10-18 17:06:49.508.
+Test Suite 'OpenSnekTests.xctest' started at 2026-10-18 17:06:49.509.
+Test Suite 'BasiliskV4OnboardingTests' started at 2026-10-18 17:06:49.509.
+Test Case '-[OpenSnekTests.BasiliskV4OnboardingTests testHardwareReceiverButtonsAndPowerRestoreExactly]' started.
+Test Case '-[OpenSnekTests.BasiliskV4OnboardingTests testHardwareReceiverButtonsAndPowerRestoreExactly]' passed (17.660 seconds).
+Test Suite 'BasiliskV4OnboardingTests' passed at 2026-10-18 17:07:07.169.
+	 Executed 1 test, with 0 failures (0 unexpected) in 17.660 (17.660) seconds
+Test Suite 'OpenSnekTests.xctest' passed at 2026-10-18 17:07:07.169.
+	 Executed 1 test, with 0 failures (0 unexpected) in 17.660 (17.660) seconds
+Test Suite 'Selected tests' passed at 2026-10-18 17:07:07.169.
+	 Executed 1 test, with 0 failures (0 unexpected) in 17.660 (17.661) seconds

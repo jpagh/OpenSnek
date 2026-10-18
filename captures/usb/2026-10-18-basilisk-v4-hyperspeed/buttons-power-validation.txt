@@ -1,0 +1,14 @@
+Test Suite 'Selected tests' started at 2026-10-18 15:44:13.110.
+Test Suite 'OpenSnekTests.xctest' started at 2026-10-18 15:44:13.110.
+Test Suite 'BasiliskV4OnboardingTests' started at 2026-10-18 15:44:13.110.
+Test Case '-[OpenSnekTests.BasiliskV4OnboardingTests testHardwareReceiverButtonsAndPowerRestoreExactly]' started.
+/Users/jack/Projects/OpenSnek/OpenSnek/Tests/OpenSnekTests/HardwareValidationSession.swift:74: error: -[OpenSnekTests.BasiliskV4OnboardingTests testHardwareReceiverButtonsAndPowerRestoreExactly] : failed: caught error: "Error Domain=HardwareValidation Code=1 "Restoration failed; retain /tmp/opensnek-basilisk-v4-buttons-power-20261018.json. Operation: Changed power readback mismatch. Restore: Restored state does not match the original snapshot" UserInfo={NSLocalizedDescription=Restoration failed; retain /tmp/opensnek-basilisk-v4-buttons-power-20261018.json. Operation: Changed power readback mismatch. Restore: Restored state does not match the original snapshot}"
+Test Case '-[OpenSnekTests.BasiliskV4OnboardingTests testHardwareReceiverButtonsAndPowerRestoreExactly]' failed (9.490 seconds).
+Test Suite 'BasiliskV4OnboardingTests' failed at 2026-10-18 15:44:22.600.
+	 Executed 1 test, with 1 failure (1 unexpected) in 9.490 (9.490) seconds
+Test Suite 'OpenSnekTests.xctest' failed at 2026-10-18 15:44:22.601.
+	 Executed 1 test, with 1 failure (1 unexpected) in 9.490 (9.490) seconds
+Test Suite 'Selected tests' failed at 2026-10-18 15:44:22.601.
+	 Executed 1 test, with 1 failure (1 unexpected) in 9.490 (9.491) seconds
+Note: Some test targets reported failures:
+  - OpenSnekTests (XCTest)

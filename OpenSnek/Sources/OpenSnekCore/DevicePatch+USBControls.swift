@@ -9,6 +9,11 @@ public extension DevicePatch {
             supported.dpiStagePairs = nil
             supported.activeStage = nil
         }
+        if profile.supportedLightingEffects.isEmpty {
+            supported.ledRGB = nil
+            supported.lightingEffect = nil
+        }
+        if let effect = supported.lightingEffect, !profile.supportedLightingEffects.contains(effect.kind) { supported.lightingEffect = nil }
         if !profile.supportsPollRateControls { supported.pollRate = nil }
         if !profile.supportsPowerManagementControls {
             supported.sleepTimeout = nil

@@ -2,6 +2,51 @@
 
 This document describes the USB HID protocol used by Razer mice, based on reverse engineering from the [OpenRazer](https://github.com/openrazer/openrazer) project and our own testing.
 
+## Basilisk V4 HyperSpeed receiver bring-up (`0x00EA`)
+
+Local scoped validation uses transaction `0x1F`. Standard scalar/table DPI reads
+and writes (`04:85/05`, `04:86/06`) support the captured five-row table with IDs
+1..5. Active tokens are IDs, not array offsets. Tests preserved raw original table
+and scalar bytes, checked a changed first row and active-stage-only transition,
+and verified exact live/persistent restoration. The profile ceiling is the vendor's
+33,000 DPI specification; independent X/Y and ceiling writes remain untested.
+
+Button slots 1,2,3,4,5,9,10,52,53 round-trip right-click and Default through
+`02:0C/8C` on persistent target 1 and live target 0. Tilt defaults are
+`0e 01 68 00 14 00 00` / `0e 01 69 00 14 00 00`. Extra-slot success frames do
+not establish valid bindings: candidate AI/Hypershift/profile payloads remain
+unmapped and must not be exposed or rewritten on that evidence alone.
+
+Underglow brightness uses `0F:84/04`, args `01 0A <value>`; original raw 85 was
+changed to 128, read back, restored, and physically confirmed. LED targets `01`
+and `04` reject brightness reads. `0F:82`, size 12, args `<target> 0A ...` reads
+the current extended effect body. Original live/stored reads return
+`00 0A 03 01 28 01 00 FF 00 00 FF 00` (Spectrum, not Static); storage echo is
+zero for either requested target. Standard `0F:02` bodies round-trip Off, Static,
+Spectrum, both Wave directions, and random/single/dual Pulse, with physical owner
+confirmation and exact original live/stored raw restoration. Reactive also
+round-trips its register body but failed physical rendering; keep it hidden.
+The app hydrates live effect state, colors, direction and speed from strict
+parsing and checks written effect fields once after ACK without retries.
+No software-frame contract is validated.
+
+Power sleep and threshold reads/writes round-trip. Original threshold raw 77
+exceeds the existing editor write clamp of 63: recovery must restore raw original
+bytes, not route restoration through editor clamps. Initial failed restoration,
+raw recovery, corrected test passes, and restored journals are retained in
+[the evidence directory](../../captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md).
+Receiver poll reads `00:85`, exploratory `00:8B`, and newer `00:C0` returned
+status `05` while DPI reads succeeded; receiver polling controls stay disabled.
+The separately discovered wired identity `00EB` independently validates DPI,
+power, nine standard/tilt bindings, and the same underglow brightness/seven-mode
+effect surface, plus extended polling described below. Wired stage transitions
+were tested with explicit X/Y pairs (X-only patches intentionally preserve Y),
+active-stage-only changes and reduced stage counts, preserving original raw
+live/persistent tables and scalars on restore. Owner confirmed wired UI, button/
+tilt behavior and lighting rendering. No Bluetooth, hardware-profile CRUD,
+scroll-mode-control, persistence, charging-transition, or service sleep/wake claim
+follows from those finite tests.
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -137,6 +182,27 @@ Rate byte mapping:
   0x02 = 500 Hz
   0x08 = 125 Hz
 ```
+
+#### Extended Poll Rate (`00:C0/40`)
+
+The Basilisk V4 HyperSpeed **wired** identity `1532:00EB` uses this separate
+encoding. Its supplied receiver `00EA` rejects both `00:85` and `00:C0`; do not
+route extended writes to the receiver or assume this is a transport-wide quirk.
+
+- Get `00:C0`, size 2, args `00 00`: successful payload `00 <rate>`.
+  Size 1 also succeeds but the rate still occupies args[1], outside the declared
+  one-byte body. Parse the actual response bytes with status/class/command and
+  target-0 echo checks, not the legacy args[0] divisor.
+- Set `00:40`, size 2, args `<target> <rate>`. Targets 0 and 1 were independently
+  changed/read back; recovery preserves both originals and restores 1 before 0.
+- Validated rate bytes: `40` = 125 Hz, `20` = 250 Hz, `10` = 500 Hz,
+  `08` = 1000 Hz. Original values on both targets were `08`.
+- The app writes target 0, then requires one strict `C0` readback matching the
+  requested Hz. No write/readback retry and no higher-rate support claim.
+- Protocol source: OpenRazer `razer_chroma_misc_get/set_polling_rate2` in
+  [razerchromacommon.c](https://github.com/openrazer/openrazer/blob/477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d/driver/razerchromacommon.c).
+  Local evidence: `wired-poll-validation.txt`, `wired-app-poll-validation.txt`,
+  and restored journals in [the capture directory](../../captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md).
 
 #### Set Poll Rate
 ```

@@ -30,6 +30,8 @@ public enum DeviceTransportKind: String, CaseIterable, Codable, Hashable, Sendab
 
 /// Defines device profile ID values.
 public enum DeviceProfileID: String, Codable, Hashable, Sendable {
+    case basiliskV4Hyperspeed = "basilisk_v4_hyperspeed"
+    case basiliskV4HyperspeedWired = "basilisk_v4_hyperspeed_wired"
     case basiliskV3XHyperspeed = "basilisk_v3_x_hyperspeed"
     case basiliskV3 = "basilisk_v3"
     case basiliskV3Pro = "basilisk_v3_pro"
@@ -53,7 +55,7 @@ extension DeviceProfileID {
     public var isBasiliskV3ProFamily: Bool {
         switch self {
         case .basiliskV3Pro, .basiliskV3Pro35K: return true
-        case .basiliskV3XHyperspeed, .basiliskV3, .basiliskV335K, .orochiV2, .nagaPro, .nagaV2Pro, .basilisk, .lanceheadTournamentEdition, .huntsmanMini, .tartarusPro, .mouseDock: return false
+        case .basiliskV4Hyperspeed, .basiliskV4HyperspeedWired, .basiliskV3XHyperspeed, .basiliskV3, .basiliskV335K, .orochiV2, .nagaPro, .nagaV2Pro, .basilisk, .lanceheadTournamentEdition, .huntsmanMini, .tartarusPro, .mouseDock: return false
         }
     }
 }
@@ -197,11 +199,12 @@ public struct MouseState: Codable, Hashable, Sendable {
     public let active_onboard_profile: Int?
     public let onboard_profile_count: Int?
     public let led_value: Int?
+    public let lighting_effect: LightingEffectPatch?
     public let capabilities: Capabilities
 
     public init(
         device: DeviceSummary, connection: String, battery_percent: Int?, charging: Bool?, dpi: DpiPair?, dpi_stages: DpiStages, poll_rate: Int?, sleep_timeout: Int? = nil, device_mode: DeviceMode?, low_battery_threshold_raw: Int? = nil, scroll_mode: Int? = nil, scroll_acceleration: Bool? = nil,
-        scroll_smart_reel: Bool? = nil, active_onboard_profile: Int? = nil, onboard_profile_count: Int? = nil, led_value: Int?, capabilities: Capabilities
+        scroll_smart_reel: Bool? = nil, active_onboard_profile: Int? = nil, onboard_profile_count: Int? = nil, led_value: Int?, capabilities: Capabilities, lighting_effect: LightingEffectPatch? = nil
     ) {
         self.device = device
         self.connection = connection
@@ -219,6 +222,7 @@ public struct MouseState: Codable, Hashable, Sendable {
         self.active_onboard_profile = active_onboard_profile
         self.onboard_profile_count = onboard_profile_count
         self.led_value = led_value
+        self.lighting_effect = lighting_effect
         self.capabilities = capabilities
     }
 }
@@ -246,12 +250,12 @@ public extension MouseState {
             onboard_profile_count: onboard_profile_count ?? previous.onboard_profile_count, led_value: led_value ?? previous.led_value,
             capabilities: Capabilities(
                 dpi_stages: capabilities.dpi_stages || previous.capabilities.dpi_stages, poll_rate: capabilities.poll_rate || previous.capabilities.poll_rate, power_management: capabilities.power_management || previous.capabilities.power_management,
-                button_remap: capabilities.button_remap || previous.capabilities.button_remap, lighting: capabilities.lighting || previous.capabilities.lighting))
+                button_remap: capabilities.button_remap || previous.capabilities.button_remap, lighting: capabilities.lighting || previous.capabilities.lighting), lighting_effect: lighting_effect ?? previous.lighting_effect)
     }
 
     var hasStableTelemetryData: Bool {
         battery_percent != nil || charging != nil || poll_rate != nil || sleep_timeout != nil || device_mode != nil || low_battery_threshold_raw != nil || scroll_mode != nil || scroll_acceleration != nil || scroll_smart_reel != nil || active_onboard_profile != nil || onboard_profile_count != nil
-            || led_value != nil
+            || led_value != nil || lighting_effect != nil
     }
 
     func differsOnlyInDynamicDpiState(from previous: MouseState?) -> Bool {
@@ -262,7 +266,7 @@ public extension MouseState {
         let baseSettingsMatch = poll_rate == previous.poll_rate && sleep_timeout == previous.sleep_timeout && device_mode == previous.device_mode && low_battery_threshold_raw == previous.low_battery_threshold_raw
         let scrollSettingsMatch = scroll_mode == previous.scroll_mode && scroll_acceleration == previous.scroll_acceleration && scroll_smart_reel == previous.scroll_smart_reel
         let profileStateMatches = active_onboard_profile == previous.active_onboard_profile && onboard_profile_count == previous.onboard_profile_count
-        let lightingMatches = led_value == previous.led_value
+        let lightingMatches = led_value == previous.led_value && lighting_effect == previous.lighting_effect
 
         return identityMatches && batteryMatches && baseSettingsMatch && scrollSettingsMatch && profileStateMatches && lightingMatches && capabilities == previous.capabilities
     }
@@ -278,7 +282,7 @@ public extension MouseState {
             scroll_smart_reel: read.scroll_smart_reel ?? scroll_smart_reel, active_onboard_profile: read.active_onboard_profile ?? active_onboard_profile, onboard_profile_count: read.onboard_profile_count ?? onboard_profile_count, led_value: read.led_value ?? led_value,
             capabilities: Capabilities(
                 dpi_stages: capabilities.dpi_stages || read.capabilities.dpi_stages, poll_rate: capabilities.poll_rate || read.capabilities.poll_rate, power_management: capabilities.power_management || read.capabilities.power_management,
-                button_remap: capabilities.button_remap || read.capabilities.button_remap, lighting: capabilities.lighting || read.capabilities.lighting))
+                button_remap: capabilities.button_remap || read.capabilities.button_remap, lighting: capabilities.lighting || read.capabilities.lighting), lighting_effect: read.lighting_effect ?? lighting_effect)
     }
 }
 

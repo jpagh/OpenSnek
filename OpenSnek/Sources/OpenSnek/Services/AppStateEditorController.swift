@@ -455,6 +455,7 @@ import OpenSnekCore
             AppLog.debug("AppState", "hydrateEditable.scroll source=state device=\(deviceStore.selectedDeviceID ?? "nil") " + "state=\(Self.diagnosticScrollState(state))")
             hydrateEditableScroll(from: state)
             if let led = state.led_value { editorStore.editableLedBrightness = led }
+            if let effect = state.lighting_effect { hydrateReadLightingEffect(effect) }
             return
         }
 
@@ -631,6 +632,14 @@ import OpenSnekCore
         return values.map { String(format: "%02X", $0) }.joined(separator: ",")
     }
 
+    private func hydrateReadLightingEffect(_ effect: LightingEffectPatch) {
+        editorStore.editableLightingEffect = effect.kind
+        if effect.kind.usesPrimaryColor { editorStore.editableColor = RGBColor(r: effect.primary.r, g: effect.primary.g, b: effect.primary.b) }
+        if effect.kind.usesSecondaryColor { editorStore.editableSecondaryColor = RGBColor(r: effect.secondary.r, g: effect.secondary.g, b: effect.secondary.b) }
+        editorStore.editableLightingWaveDirection = effect.waveDirection
+        editorStore.editableLightingReactiveSpeed = effect.reactiveSpeed
+    }
+
     func hydrateLightingStateIfNeeded(device: MouseDevice) async {
         guard !isTearingDown else { return }
         hydrateSoftwareLightingPreferenceStateIfNeeded(device: device)
@@ -641,9 +650,14 @@ import OpenSnekCore
             return
         }
 
+        guard !hydratedLightingStateByDeviceID.contains(device.id) else { return }
+        if let effect = deviceStore.state?.lighting_effect {
+            hydrateReadLightingEffect(effect)
+            hydratedLightingStateByDeviceID.insert(device.id)
+            return
+        }
         if hydratePersistedLightingStateIfNeeded(device: device) { return }
 
-        guard !hydratedLightingStateByDeviceID.contains(device.id) else { return }
         if device.transport == .bluetooth, let rgb = try? await environment.backend.readLightingColor(device: device) {
             guard !isTearingDown else { return }
             editorStore.editableColor = RGBColor(r: rgb.r, g: rgb.g, b: rgb.b)

@@ -1,0 +1,7 @@
+warning: IOHIDManagerOpen failed (-536870203); continuing best-effort discovery
+usb-input-listen candidates=4 duration=25.0s
+candidate[0] 1532:00ea:02150000:usb pid=0x00ea loc=0x02150000 usage=0x01:0x03 input=0 feature=90 score=100 name=Razer Basilisk V4 HyperSpeed
+candidate[1] 1532:00ea:02150000:usb pid=0x00ea loc=0x02150000 usage=0x01:0x02 input=8 feature=0 score=25 name=Razer Basilisk V4 HyperSpeed
+candidate[2] 1532:00ea:02150000:usb pid=0x00ea loc=0x02150000 usage=0x01:0x06 input=16 feature=1 score=1 name=Razer Basilisk V4 HyperSpeed
+candidate[3] 1532:00ea:02150000:usb pid=0x00ea loc=0x02150000 usage=0x01:0x06 input=8 feature=0 score=0 name=Razer Basilisk V4 HyperSpeed
+usb-input-listen complete reports=0

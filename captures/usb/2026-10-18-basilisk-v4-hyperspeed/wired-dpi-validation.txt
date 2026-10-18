@@ -1,0 +1,14 @@
+Test Suite 'Selected tests' started at 2026-10-18 17:05:28.628.
+Test Suite 'OpenSnekTests.xctest' started at 2026-10-18 17:05:28.629.
+Test Suite 'BasiliskV4DPITests' started at 2026-10-18 17:05:28.629.
+Test Case '-[OpenSnekTests.BasiliskV4DPITests testHardwareUSBStageTransitionsAndExactRestore]' started.
+/Users/jack/Projects/OpenSnek/OpenSnek/Tests/OpenSnekTests/HardwareValidationSession.swift:75: error: -[OpenSnekTests.BasiliskV4DPITests testHardwareUSBStageTransitionsAndExactRestore] : failed: caught error: "Error Domain=HardwareValidation Code=1 "DPI transition readback mismatch" UserInfo={NSLocalizedDescription=DPI transition readback mismatch}"
+Test Case '-[OpenSnekTests.BasiliskV4DPITests testHardwareUSBStageTransitionsAndExactRestore]' failed (3.074 seconds).
+Test Suite 'BasiliskV4DPITests' failed at 2026-10-18 17:05:31.703.
+	 Executed 1 test, with 1 failure (1 unexpected) in 3.074 (3.075) seconds
+Test Suite 'OpenSnekTests.xctest' failed at 2026-10-18 17:05:31.703.
+	 Executed 1 test, with 1 failure (1 unexpected) in 3.074 (3.075) seconds
+Test Suite 'Selected tests' failed at 2026-10-18 17:05:31.703.
+	 Executed 1 test, with 1 failure (1 unexpected) in 3.074 (3.075) seconds
+Note: Some test targets reported failures:
+  - OpenSnekTests (XCTest)

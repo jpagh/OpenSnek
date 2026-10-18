@@ -126,6 +126,7 @@ extension BridgeClient {
                 scrollSmartReel = nil
             }
             let led = try getScrollLEDBrightness(session, device)
+            let lightingEffect = try getLightingEffect(session, device)
             let profile = statedProfile
             let capabilities = resolvedUSBStateCapabilities(profile: profile, stages: stages, poll: poll, sleepTimeout: sleepTimeout, led: led)
 
@@ -139,7 +140,8 @@ extension BridgeClient {
             return MouseState(
                 device: DeviceSummary(id: device.id, product_name: device.product_name, serial: serial ?? device.serial, transport: device.transport, firmware: fw ?? device.firmware), connection: "USB", battery_percent: battery?.0, charging: battery?.1, dpi: dpi.map { DpiPair(x: $0.0, y: $0.1) },
                 dpi_stages: DpiStages(active_stage: active, values: values, pairs: pairs), poll_rate: poll, sleep_timeout: sleepTimeout, device_mode: mode.map { DeviceMode(mode: $0.0, param: $0.1) }, low_battery_threshold_raw: lowBatteryThreshold, scroll_mode: scrollMode,
-                scroll_acceleration: scrollAcceleration, scroll_smart_reel: scrollSmartReel, active_onboard_profile: onboardProfile?.active, onboard_profile_count: onboardProfile?.count ?? max(1, device.onboard_profile_count), led_value: led, capabilities: capabilities)
+                scroll_acceleration: scrollAcceleration, scroll_smart_reel: scrollSmartReel, active_onboard_profile: onboardProfile?.active, onboard_profile_count: onboardProfile?.count ?? max(1, device.onboard_profile_count), led_value: led, capabilities: capabilities,
+                lighting_effect: lightingEffect)
         }
     }
 
@@ -373,25 +375,19 @@ extension BridgeClient {
     }
 
     func getPollRate(_ session: USBHIDControlSession, _ device: MouseDevice) throws -> Int? {
-        guard let r = try perform(session, device, classID: 0x00, cmdID: 0x85, size: 0x01), r[0] == 0x02 else { return nil }
-        switch r[8] {
-        case 0x01: return 1000
-        case 0x02: return 500
-        case 0x08: return 125
-        default: return nil
-        }
+        let encoding = usbDeviceProfile(for: device)?.usbPollRateProtocol ?? .standard
+        let command = USBHIDProtocol.pollRateReadCommand(encoding: encoding)
+        guard let response = try perform(session, device, classID: 0, cmdID: command.commandID, size: command.size, args: command.args) else { return nil }
+        return USBHIDProtocol.pollRate(from: response, encoding: encoding)
     }
 
     func setPollRate(_ session: USBHIDControlSession, _ device: MouseDevice, value: Int) throws -> Bool {
-        let raw: UInt8
-        switch value {
-        case 1000: raw = 0x01
-        case 500: raw = 0x02
-        case 125: raw = 0x08
-        default: return false
-        }
-        guard let r = try perform(session, device, classID: 0x00, cmdID: 0x05, size: 0x01, args: [raw]) else { return false }
-        return r[0] == 0x02
+        let profile = usbDeviceProfile(for: device)
+        let encoding = profile?.usbPollRateProtocol ?? .standard
+        guard (profile?.supportedPollRates ?? [125, 500, 1000]).contains(value), let command = USBHIDProtocol.pollRateWriteCommand(hz: value, encoding: encoding) else { return false }
+        guard let response = try perform(session, device, classID: 0, cmdID: command.commandID, size: command.size, args: command.args), response[0] == 2 else { return false }
+        if encoding == .standard { return true }
+        return try getPollRate(session, device) == value
     }
 
     func getIdleTime(_ session: USBHIDControlSession, _ device: MouseDevice) throws -> Int? {
@@ -574,11 +570,18 @@ extension BridgeClient {
         return wroteAny
     }
 
+    func getLightingEffect(_ session: USBHIDControlSession, _ device: MouseDevice) throws -> LightingEffectPatch? {
+        guard let ledID = usbDeviceProfile(for: device)?.usbLightingEffectReadLEDID else { return nil }
+        guard let response = try perform(session, device, classID: 0x0F, cmdID: 0x82, size: 0x0C, args: USBHIDProtocol.profileLightingEffectReadArgs(profile: 0, ledID: ledID)) else { return nil }
+        return USBHIDProtocol.lightingEffect(from: response, expectedLEDID: ledID)
+    }
+
     func setScrollLEDEffect(_ session: USBHIDControlSession, _ device: MouseDevice, effect: LightingEffectPatch, ledIDs: [UInt8]? = nil) throws -> Bool {
         var wroteAny = false
         for ledID in usbLightingLEDIDs(for: device, override: ledIDs) {
             let args = BLEVendorProtocol.buildScrollLEDEffectArgs(effect: effect, ledID: ledID)
             guard let r = try perform(session, device, classID: 0x0F, cmdID: 0x02, size: UInt8(max(0, min(255, args.count))), args: args), r[0] == 0x02 else { return false }
+            if usbDeviceProfile(for: device)?.usbLightingEffectReadLEDID != nil { guard let observed = try getLightingEffect(session, device), USBHIDProtocol.lightingEffect(observed, matches: effect) else { return false } }
             wroteAny = true
         }
         return wroteAny

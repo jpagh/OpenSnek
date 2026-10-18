@@ -318,7 +318,7 @@ extension BridgeClient {
             device: base.device, connection: base.connection, battery_percent: base.battery_percent, charging: base.charging, dpi: nextDpi, dpi_stages: DpiStages(active_stage: resolvedActive, values: nextValues, pairs: nextPairs), poll_rate: patch.pollRate ?? base.poll_rate,
             sleep_timeout: patch.sleepTimeout ?? base.sleep_timeout, device_mode: patch.deviceMode ?? base.device_mode, low_battery_threshold_raw: patch.lowBatteryThresholdRaw ?? base.low_battery_threshold_raw, scroll_mode: patch.scrollMode ?? base.scroll_mode,
             scroll_acceleration: patch.scrollAcceleration ?? base.scroll_acceleration, scroll_smart_reel: patch.scrollSmartReel ?? base.scroll_smart_reel, active_onboard_profile: base.active_onboard_profile, onboard_profile_count: base.onboard_profile_count,
-            led_value: patch.ledBrightness ?? base.led_value, capabilities: base.capabilities)
+            led_value: patch.ledBrightness ?? base.led_value, capabilities: base.capabilities, lighting_effect: patch.lightingEffect ?? base.lighting_effect)
     }
 }
 

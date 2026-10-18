@@ -31,6 +31,7 @@ Support is transport-specific. A mouse may be supported over USB, Bluetooth, or 
 
 | Device | USB | Bluetooth | Notes |
 |---|---|---|---|
+| Basilisk V4 HyperSpeed | Validated (receiver and wired) | Not yet | DPI/stages, battery/power, nine standard/tilt bindings, underglow brightness and off/static/spectrum/wave/pulse effects with live readback. AI/Hypershift, poll rate, profile management remain unmapped; Reactive hidden after physical failure. Wired `0x00EB` independently supports the same validated controls plus 125/250/500/1000 Hz polling; receiver polling remains unmapped |
 | Basilisk V3 X HyperSpeed | Validated | Validated | |
 | Basilisk V3 | Mapped | No | OpenRazer-backed USB profile, sharing the Basilisk V3 USB family configuration with a `26,000` DPI ceiling |
 | Basilisk V3 Pro | Validated | Validated | |

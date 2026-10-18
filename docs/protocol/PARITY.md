@@ -5,6 +5,7 @@ This document is the single source of truth for feature parity between the USB H
 ## Scope
 
 Target device baseline:
+- Basilisk V4 HyperSpeed (supplied receiver `USB PID 0x00EA`, independently validated wired `0x00EB` with the same DPI/power/nine-button/lighting surface plus 125/250/500/1000 Hz polling): limited local validation of DPI/stages, nine standard/tilt bindings, power, and underglow brightness/color plus Off, Spectrum, Wave, and Pulse with live effect readback. Reactive failed physical validation and is hidden; no shared V3 profile/scroll-control assumptions. [Evidence](../../captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md).
 - Basilisk V3 X HyperSpeed (`USB PID 0x00B9`, `BT PID 0x00BA`)
 - Basilisk V3 (`USB PID 0x0099`, OpenRazer-backed USB profile only)
 - Basilisk V3 Pro (`USB PIDs 0x00AA, 0x00AB`)

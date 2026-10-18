@@ -1,0 +1,48 @@
+{
+  "schema": "v4-lighting-1",
+  "device_id": "1532:00ea:02150000:usb",
+  "phase": "restored",
+  "original": {
+    "0": "000a0301280100ff0000ff00",
+    "1": "000a0301280100ff0000ff00"
+  },
+  "results": [
+    {
+      "name": "static",
+      "readback": "000a0100000100ff40000000"
+    },
+    {
+      "name": "off",
+      "readback": "000a00000000000000000000"
+    },
+    {
+      "name": "spectrum",
+      "readback": "000a03000000000000000000"
+    },
+    {
+      "name": "wave-left",
+      "readback": "000a04012800000000000000"
+    },
+    {
+      "name": "wave-right",
+      "readback": "000a04022800000000000000"
+    },
+    {
+      "name": "reactive",
+      "readback": "000a05000201ff4000000000"
+    },
+    {
+      "name": "pulse-random",
+      "readback": "000a02000000000000000000"
+    },
+    {
+      "name": "pulse-single",
+      "readback": "000a020100010040ff000000"
+    },
+    {
+      "name": "pulse-dual",
+      "readback": "000a0202000200ff40ff4000"
+    }
+  ],
+  "result": "pass"
+}

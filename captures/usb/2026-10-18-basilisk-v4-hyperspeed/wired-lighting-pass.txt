@@ -1,0 +1,11 @@
+Test Suite 'Selected tests' started at 2026-10-18 17:07:12.005.
+Test Suite 'OpenSnekTests.xctest' started at 2026-10-18 17:07:12.006.
+Test Suite 'BasiliskV4LightingTests' started at 2026-10-18 17:07:12.006.
+Test Case '-[OpenSnekTests.BasiliskV4LightingTests testHardwareEffectApplyReadbackAndExactRestore]' started.
+Test Case '-[OpenSnekTests.BasiliskV4LightingTests testHardwareEffectApplyReadbackAndExactRestore]' passed (7.810 seconds).
+Test Suite 'BasiliskV4LightingTests' passed at 2026-10-18 17:07:19.816.
+	 Executed 1 test, with 0 failures (0 unexpected) in 7.810 (7.810) seconds
+Test Suite 'OpenSnekTests.xctest' passed at 2026-10-18 17:07:19.816.
+	 Executed 1 test, with 0 failures (0 unexpected) in 7.810 (7.810) seconds
+Test Suite 'Selected tests' passed at 2026-10-18 17:07:19.816.
+	 Executed 1 test, with 0 failures (0 unexpected) in 7.810 (7.811) seconds

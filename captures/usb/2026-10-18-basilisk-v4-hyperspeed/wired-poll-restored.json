@@ -1,0 +1,76 @@
+{
+  "schema": "v4-wired-poll-1",
+  "device_id": "1532:00eb:02141000:usb",
+  "phase": "restored",
+  "original": [
+    8,
+    8
+  ],
+  "results": [
+    {
+      "target": 0,
+      "hz": 125,
+      "snapshot": [
+        64,
+        8
+      ]
+    },
+    {
+      "target": 0,
+      "hz": 250,
+      "snapshot": [
+        32,
+        8
+      ]
+    },
+    {
+      "target": 0,
+      "hz": 500,
+      "snapshot": [
+        16,
+        8
+      ]
+    },
+    {
+      "target": 0,
+      "hz": 1000,
+      "snapshot": [
+        8,
+        8
+      ]
+    },
+    {
+      "target": 1,
+      "hz": 125,
+      "snapshot": [
+        64,
+        64
+      ]
+    },
+    {
+      "target": 1,
+      "hz": 250,
+      "snapshot": [
+        32,
+        32
+      ]
+    },
+    {
+      "target": 1,
+      "hz": 500,
+      "snapshot": [
+        16,
+        16
+      ]
+    },
+    {
+      "target": 1,
+      "hz": 1000,
+      "snapshot": [
+        8,
+        8
+      ]
+    }
+  ],
+  "result": "pass"
+}

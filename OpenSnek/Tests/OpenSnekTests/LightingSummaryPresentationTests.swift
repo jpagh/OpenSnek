@@ -4,6 +4,13 @@ import OpenSnekCore
 
 /// Exercises lighting summary presentation behavior.
 final class LightingSummaryPresentationTests: XCTestCase {
+    func testBrightnessOnlySummaryDoesNotInventStaticEffectOrColor() {
+        let presentation = LightingSummaryPresentation.make(
+            LightingSummaryInput(supportsSoftwareLightingEffects: false, softwareLightingStatus: nil, editableSoftwareLightingPreset: .flame, editableSoftwareLightingPalette: [], onboardEffectLabel: nil, onboardColors: [], fallbackColor: RGBColor(r: 0, g: 255, b: 0), batteryState: nil))
+        XCTAssertEqual(presentation.title, "Brightness only · Effect unknown")
+        XCTAssertTrue(presentation.swatches.isEmpty)
+    }
+
     func testBatteryMeterSummaryUsesBatteryIconInsteadOfPaletteSwatches() {
         let presentation = LightingSummaryPresentation.make(
             LightingSummaryInput(

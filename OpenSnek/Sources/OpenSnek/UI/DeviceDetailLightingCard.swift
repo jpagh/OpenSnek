@@ -111,6 +111,12 @@ struct LightingCard: View {
 
     private var softwareLightingIsRunning: Bool { softwareLightingStatus?.state == .running }
 
+    private var onboardEffectSummaryLabel: String? {
+        let profile = DeviceProfiles.resolve(vendorID: selected.vendor_id, productID: selected.product_id, transport: selected.transport)
+        if profile?.usbLightingEffectReadLEDID != nil { return editorStore.deviceStore.state?.lighting_effect?.kind.label }
+        return selected.supportsOnboardLightingEffectControls ? editorStore.editableLightingEffect.label : nil
+    }
+
     private var lightingSummaryTitle: String { lightingSummaryPresentation.title }
 
     private var lightingSummarySwatches: [RGBColor] { lightingSummaryPresentation.swatches }
@@ -119,8 +125,8 @@ struct LightingCard: View {
         LightingSummaryPresentation.make(
             LightingSummaryInput(
                 supportsSoftwareLightingEffects: selected.supportsSoftwareLightingEffects, softwareLightingStatus: softwareLightingStatus, editableSoftwareLightingPreset: editorStore.editableSoftwareLightingPreset,
-                editableSoftwareLightingPalette: editorStore.editableSoftwareLightingPalette(for: editorStore.editableSoftwareLightingPreset), onboardEffectLabel: editorStore.editableLightingEffect.label, onboardColors: editorStore.lightingGradientDisplayColors,
-                fallbackColor: editorStore.editableColor, batteryState: batteryMeterSourceState), )
+                editableSoftwareLightingPalette: editorStore.editableSoftwareLightingPalette(for: editorStore.editableSoftwareLightingPreset), onboardEffectLabel: onboardEffectSummaryLabel, onboardColors: editorStore.lightingGradientDisplayColors, fallbackColor: editorStore.editableColor,
+                batteryState: batteryMeterSourceState), )
     }
 
     private var advancedStatusText: String? {
@@ -346,13 +352,19 @@ struct LightingCard: View {
     }
 
     @ViewBuilder private func onboardControls(includePresetPicker: Bool = true) -> some View {
-        lightingNotice(systemImage: "memorychip.fill", iconColor: actionAccent, text: "Onboard lighting is stored on the device and survives restart and reconnect.")
+        if selected.supportsOnboardLightingEffectControls {
+            lightingNotice(systemImage: "memorychip.fill", iconColor: actionAccent, text: "Onboard effects run on the device. Persistence varies by model and setting.")
+        } else {
+            lightingNotice(systemImage: "lightbulb", iconColor: actionAccent, text: "Brightness control only. The current effect cannot be read or changed by OpenSnek.")
+        }
 
         if selected.supportsLightingBrightnessControls { brightnessControls().padding(.vertical, 2) }
 
-        if includePresetPicker { onboardPresetPicker() }
-        onboardEffectOptions()
-        onboardColorControls()
+        if selected.supportsOnboardLightingEffectControls {
+            if includePresetPicker { onboardPresetPicker() }
+            onboardEffectOptions()
+            onboardColorControls()
+        }
     }
 
     var body: some View {
@@ -647,7 +659,8 @@ struct LightingSummaryPresentation: Equatable {
             return LightingSummaryPresentation(title: preset.label, swatches: condensedSwatches(from: palette, fallback: input.fallbackColor), batteryIndicator: .hidden)
         }
 
-        return LightingSummaryPresentation(title: "Onboard \(input.onboardEffectLabel)", swatches: condensedSwatches(from: input.onboardColors, fallback: input.fallbackColor), batteryIndicator: .hidden)
+        guard let effectLabel = input.onboardEffectLabel else { return LightingSummaryPresentation(title: "Brightness only · Effect unknown", swatches: [], batteryIndicator: .hidden) }
+        return LightingSummaryPresentation(title: "Onboard \(effectLabel)", swatches: condensedSwatches(from: input.onboardColors, fallback: input.fallbackColor), batteryIndicator: .hidden)
     }
 
     private static func batteryIcon(for state: MouseState, percent: Int) -> BatteryIconPresentation { ServiceMenuBarPresentation.batteryIcon(percent: percent, charging: state.charging, thresholdRaw: state.low_battery_threshold_raw) }
@@ -669,7 +682,7 @@ struct LightingSummaryInput {
     let softwareLightingStatus: SoftwareLightingEngineStatus?
     let editableSoftwareLightingPreset: SoftwareLightingPresetID
     let editableSoftwareLightingPalette: [RGBColor]
-    let onboardEffectLabel: String
+    let onboardEffectLabel: String?
     let onboardColors: [RGBColor]
     let fallbackColor: RGBColor
     let batteryState: MouseState?

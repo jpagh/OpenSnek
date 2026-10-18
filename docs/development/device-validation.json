@@ -2,6 +2,50 @@
   "schema_version": 1,
   "devices": [
     {
+      "profile_id": "basilisk_v4_hyperspeed_wired",
+      "transport": "usb",
+      "product_ids": ["0x00EB"],
+      "features": {
+        "poll_rate": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/wired-app-poll-validation.txt", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/wired-app-poll-restored.json"]},
+        "dpi_stages": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/wired-dpi-pairs-pass.txt", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/wired-dpi-restored.json"]},
+        "button_remap": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/wired-buttons-power-pass.txt"]},
+        "power_management": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/wired-buttons-power-restored.json"]},
+        "lighting_brightness": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/wired-buttons-power-pass.txt"]},
+        "advanced_lighting_effects": {"status": "maintainer_validated", "source": "Local hardware and physical confirmation, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/wired-lighting-pass.txt"]},
+        "onboard_profiles": {"status": "not_tested"}
+      },
+      "limitations": [
+        "Wired controls independently validated: DPI/stages, nine standard/tilt bindings, power, underglow brightness/effects, and 125/250/500/1000 Hz polling.",
+        "No higher-rate or physical USB cadence measurement claim; only register readback was validated.",
+        "AI Prompt Master, Hypershift, Reactive, profile management and software lighting remain hidden; independent X/Y and high-DPI ceiling writes remain untested.",
+        "No wired disconnect/reconnect, charging-transition, service sleep/wake, or power-cycle persistence validation."
+      ]
+    },
+    {
+      "profile_id": "basilisk_v4_hyperspeed",
+      "transport": "usb",
+      "product_ids": ["0x00EA"],
+      "features": {
+        "dpi_stages": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/dpi-validation.txt"]},
+        "button_remap": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/extended-defaults-pass.txt"]},
+        "power_management": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/extended-restored.json"]},
+        "lighting_brightness": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/extended-defaults-pass.txt"]},
+        "independent_xy": {"status": "not_tested"},
+        "poll_rate": {"status": "unsupported"},
+        "advanced_lighting_effects": {"status": "maintainer_validated", "source": "Local hardware and physical confirmation, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/app-lighting-effects-validation.txt"]},
+        "onboard_profiles": {"status": "unsupported"},
+        "software_lighting": {"status": "unsupported"},
+        "scroll_controls": {"status": "unsupported"}
+      },
+      "limitations": [
+        "This record covers the supplied 2.4 GHz receiver only; separate wired 0x00EB profile has independently validated controls, including wired-only polling. Bluetooth is not mapped.",
+        "Nine standard and tilt slots only; AI Prompt Master and Hypershift remain unmapped.",
+        "Underglow brightness, off/static/spectrum/wave/pulse supported; Reactive readback succeeds but failed physical validation and is hidden. No software streaming.",
+        "No persistence, charging-transition, closed-window service, or sleep/wake validation.",
+        "33K ceiling follows vendor specification; high-DPI writes and independent X/Y were not tested."
+      ]
+    },
+    {
       "profile_id": "basilisk_v3_pro_35k",
       "transport": "bluetooth",
       "product_ids": ["0x00D8"],

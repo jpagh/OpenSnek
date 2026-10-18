@@ -1,0 +1,11 @@
+Test Suite 'Selected tests' started at 2026-10-18 17:06:39.895.
+Test Suite 'OpenSnekTests.xctest' started at 2026-10-18 17:06:39.896.
+Test Suite 'BasiliskV4DPITests' started at 2026-10-18 17:06:39.896.
+Test Case '-[OpenSnekTests.BasiliskV4DPITests testHardwareUSBStageTransitionsAndExactRestore]' started.
+Test Case '-[OpenSnekTests.BasiliskV4DPITests testHardwareUSBStageTransitionsAndExactRestore]' passed (5.203 seconds).
+Test Suite 'BasiliskV4DPITests' passed at 2026-10-18 17:06:45.099.
+	 Executed 1 test, with 0 failures (0 unexpected) in 5.203 (5.203) seconds
+Test Suite 'OpenSnekTests.xctest' passed at 2026-10-18 17:06:45.099.
+	 Executed 1 test, with 0 failures (0 unexpected) in 5.203 (5.203) seconds
+Test Suite 'Selected tests' passed at 2026-10-18 17:06:45.099.
+	 Executed 1 test, with 0 failures (0 unexpected) in 5.203 (5.204) seconds

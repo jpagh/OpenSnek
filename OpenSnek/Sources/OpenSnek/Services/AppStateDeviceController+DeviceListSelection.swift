@@ -539,7 +539,8 @@ import OpenSnekHardware
         MouseState(
             device: DeviceSummary(id: device.id, product_name: device.product_name, serial: device.serial ?? state.device.serial, transport: device.transport, firmware: device.firmware ?? state.device.firmware), connection: device.connectionLabel, battery_percent: state.battery_percent,
             charging: state.charging, dpi: state.dpi, dpi_stages: state.dpi_stages, poll_rate: state.poll_rate, sleep_timeout: state.sleep_timeout, device_mode: state.device_mode, low_battery_threshold_raw: state.low_battery_threshold_raw, scroll_mode: state.scroll_mode,
-            scroll_acceleration: state.scroll_acceleration, scroll_smart_reel: state.scroll_smart_reel, active_onboard_profile: state.active_onboard_profile, onboard_profile_count: state.onboard_profile_count, led_value: state.led_value, capabilities: state.capabilities)
+            scroll_acceleration: state.scroll_acceleration, scroll_smart_reel: state.scroll_smart_reel, active_onboard_profile: state.active_onboard_profile, onboard_profile_count: state.onboard_profile_count, led_value: state.led_value, capabilities: state.capabilities,
+            lighting_effect: state.lighting_effect)
     }
 
     func cancelSelectedRecoveryRefresh() {
