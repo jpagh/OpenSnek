@@ -1,0 +1,16 @@
+[open-snek] Full command log: /var/folders/ct/f4qs22h96_3_sk96nx4d1yx80000gn/T//open-snek-command.tdjp6P
+Building for debugging...
+[Using on-disk description]
+[1 / 25]
+Build complete! (0.40 sec)
+Test Suite 'Selected tests' started at 2026-10-18 20:04:35.162.
+Test Suite 'OpenSnekTests.xctest' started at 2026-10-18 20:04:35.162.
+Test Suite 'BasiliskV4BluetoothParityTests' started at 2026-10-18 20:04:35.162.
+Test Case '-[OpenSnekTests.BasiliskV4BluetoothParityTests testHardwareThresholdApplyReadbackAndExactRestore]' started.
+Test Case '-[OpenSnekTests.BasiliskV4BluetoothParityTests testHardwareThresholdApplyReadbackAndExactRestore]' passed (3.505 seconds).
+Test Suite 'BasiliskV4BluetoothParityTests' passed at 2026-10-18 20:04:38.668.
+	 Executed 1 test, with 0 failures (0 unexpected) in 3.505 (3.505) seconds
+Test Suite 'OpenSnekTests.xctest' passed at 2026-10-18 20:04:38.668.
+	 Executed 1 test, with 0 failures (0 unexpected) in 3.505 (3.506) seconds
+Test Suite 'Selected tests' passed at 2026-10-18 20:04:38.668.
+	 Executed 1 test, with 0 failures (0 unexpected) in 3.505 (3.506) seconds

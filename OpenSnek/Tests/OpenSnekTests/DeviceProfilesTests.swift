@@ -499,6 +499,22 @@ final class DeviceProfilesTests: XCTestCase {
         XCTAssertEqual(DeviceProfiles.dpi(forSliderPosition: 1, profileID: .basiliskV3Pro), 30_000)
     }
 
+    func testResolveBluetoothProfileForBasiliskV4HyperSpeed() throws {
+        let profile = try XCTUnwrap(DeviceProfiles.resolve(vendorID: 0x068E, productID: 0x00EC, transport: .bluetooth))
+
+        XCTAssertEqual(profile.id, .basiliskV4Hyperspeed)
+        XCTAssertEqual(profile.productName, "Basilisk V4 HyperSpeed")
+        XCTAssertEqual(profile.buttonLayout.writableSlots, [1, 2, 3, 4, 5, 9, 10, 52, 53])
+        XCTAssertEqual(profile.usbLightingLEDIDs, [0x0A])
+        XCTAssertEqual(profile.usbLightingZones.map(\.id), ["underglow"])
+        XCTAssertEqual(profile.supportedLightingEffects, [])
+        XCTAssertTrue(profile.supportsLightingBrightnessControls)
+        XCTAssertFalse(profile.supportsPollRateControls)
+        XCTAssertFalse(profile.supportsMappedOnboardProfileCRUD)
+        XCTAssertTrue(profile.isLocallyValidated)
+        XCTAssertEqual(DeviceProfiles.maximumDPI(for: profile.id), 33_000)
+    }
+
     func testBasiliskV3ProBluetoothShowsLightingControls() {
         let bluetoothV3Pro = MouseDevice(id: "bt-v3-pro", vendor_id: 0x068E, product_id: 0x00AC, product_name: "Basilisk V3 Pro", transport: .bluetooth, path_b64: "", serial: nil, firmware: nil, profile_id: .basiliskV3Pro)
         let bluetoothV3X = MouseDevice(id: "bt-v3x", vendor_id: 0x068E, product_id: 0x00BA, product_name: "Basilisk V3 X HyperSpeed", transport: .bluetooth, path_b64: "", serial: nil, firmware: nil, profile_id: .basiliskV3XHyperspeed)
@@ -565,6 +581,9 @@ final class DeviceProfilesTests: XCTestCase {
 
         let pro35KMarketingName = DeviceProfiles.resolveBluetoothFallback(name: "Razer Basilisk V3 Pro 35K")
         XCTAssertEqual(pro35KMarketingName?.id, .basiliskV3Pro35K)
+
+        let basiliskV4 = DeviceProfiles.resolveBluetoothFallback(name: "BSK V4 HS")
+        XCTAssertEqual(basiliskV4?.id, .basiliskV4Hyperspeed)
 
         let phantomGreen = DeviceProfiles.resolveBluetoothFallback(name: "Basilisk V3 Pro 35K Phantom Green Edition")
         XCTAssertEqual(phantomGreen?.id, .basiliskV3Pro35K)

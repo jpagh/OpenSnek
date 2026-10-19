@@ -15,6 +15,7 @@ Source-of-truth rule:
 - Python tooling under `tools/python/` may contain older mappings or compatibility experiments; do not treat it as canonical when this document disagrees.
 
 Supported device baseline:
+- Basilisk V4 HyperSpeed Bluetooth (`VID=0x068E`, `PID=0x00EC`, limited local validation)
 - Basilisk V3 X HyperSpeed Bluetooth (`VID=0x068E`, `PID=0x00BA`)
 - Basilisk V3 Pro Bluetooth (`VID=0x068E`, `PID=0x00AC`)
 - Basilisk V3 Pro 35K Phantom Green Edition Bluetooth (`VID=0x068E`, `PID=0x00D8`, contributor validated)
@@ -195,16 +196,18 @@ therefore covered by this spec as product behavior.
 | Lighting zone catalog | `10 80 00 01` | none | none | LED ID list |
 | Lighting brightness (legacy/global) | `10 85 01 01` | `10 05 01 00` | `0x01` | `u8` |
 | Lighting brightness (V3 Pro zone) | `10 85 01 <led>` | `10 05 01 <led>` | `0x01` | `u8` |
+| Lighting brightness (V4 underglow) | `10 85 01 0A` | `10 05 01 0A` | `0x01` | `u8` |
 | Lighting frame color (legacy) | `10 84 00 00` | `10 04 00 00` | `0x08` | 8-byte frame |
 | Lighting zone static state (V3 Pro) | `10 83 00 <led>` | `10 03 00 <led>` | `0x0A` | 10-byte zone state |
 | Lighting mode selector (legacy) | none | `10 03 00 00` | `0x04` | `u32 LE` |
 | Sleep timeout | `05 84 00 00` | `05 04 00 00` | `0x02` | `u16 LE` |
+| Low-battery threshold (V4) | `05 82 00 00` | `05 02 00 00` | `0x01` | raw `u8`; app writes clamp to `0x0C...0x3F` |
 | Battery raw | `05 81 00 01` | none | none | `u8` |
 | Battery status | `05 80 00 01` | none | none | `u8` |
 | Button bind | none | `08 04 01 <slot>` | `0x0A` | 10-byte action |
 
 Not source-of-truth in Swift:
-- older Python tooling also contains additional candidate keys such as `05 82 00 00`, `05 02 00 00`, `01 82 00 00`, and `01 83 00 00`
+- older Python tooling also contains additional candidate keys such as `01 82 00 00` and `01 83 00 00`; low-battery `05 82/02 00 00` now ships in Swift only for the locally validated V4 profile
 - Basilisk V3 Pro Bluetooth Windows Synapse captures now show research-only profile/projection traffic on `01 86 00 00`, `01 82 00 00`, `01 8C <target> 00`, `03 04 <target> 00`, `03 05 <target> 00`, `03 06 <target> 00`, `03 80 00 00`, `03 84 <target> 00`, `08 05 <target> 00`, `08 06 01 00`, and `08 07 <target> 00`; live macOS probing additionally validated `03 82 00 00` as the current active target read and `03 02 00 00` plus a one-byte target payload as the active target selector; see [BLE Profile CRUD Draft](./BLE_PROFILE_CRUD_SPEC.md) and [Basilisk V3 Pro BT Extended Notes](../research/BASILISK_V3_PRO_BT_EXTENDED.md)
 - those keys are intentionally omitted from the main spec because current Swift OpenSnek does not rely on them
 
@@ -505,6 +508,25 @@ Observed reads on the validated device have returned consistent values across
 the zone set. Earlier lighting validation saw `ff` for `0x01`, `0x04`, and
 `0x0A`; the profile-scope sweep later saw `54` for those same zones.
 
+#### 6.3.4 V4 HyperSpeed Bluetooth Brightness
+
+The Basilisk V4 HyperSpeed Bluetooth path reports one lighting target from
+`10 80 00 01`: LED `0x0A` (underglow). Its confirmed brightness exchange is:
+
+- read: `10 85 01 0A`
+- write: `10 05 01 0A`
+- payload: one brightness byte
+
+The legacy global brightness key `10 85 01 01` is rejected. A candidate static
+color write to `10 03 00 0A` returned success but did not change the authoritative
+`10 83 00 0A` readback, so OpenSnek does not expose Bluetooth color or effects for
+this profile. A follow-up target-1 write (`10 03 01 0A`) also ACKed without
+changing either live target-0 or target-1 state. Saved/backend color/effect
+patches and regular probe color commands are blocked for brightness-only
+profiles; raw research commands remain explicit. Stored targets `2..5` contain
+readable effect bodies, but do not establish a live write contract. See the
+[parity evidence](../../captures/ble/2026-10-18-basilisk-v4-hyperspeed/parity-followup.md).
+
 Profile-scope notes:
 
 - Basilisk V3 Pro Bluetooth profile create/rewrite traffic also writes
@@ -594,6 +616,12 @@ Observed Basilisk V3 Pro Bluetooth sensitivity-clutch writes on slot `0x0F`:
 - The clutch DPI is encoded big-endian inside the 7-byte function block even
   though the generic `p0/p1/p2` table names those fields as little-endian
   action parameters.
+
+Observed Basilisk V4 HyperSpeed Bluetooth button surface (`PID 0x00EC`):
+- read keys `08 84 00 <slot>` return the current function block in the same interleaved/duplicated 16-byte family used by the other Basilisk BLE paths
+- validated slots are `0x01..0x05`, `0x09`, `0x0A`, `0x34`, and `0x35`
+- native wheel-tilt defaults are the short blocks `0e016800140000` and `0e016900140000`; V4 Bluetooth Default and Scroll Left/Right writes preserve this short form
+- slot `0x06` (AI/Hypershift candidate) and unrelated profile slots are not mapped
 
 Observed Basilisk V3 Pro Bluetooth exception:
 - wheel-tilt horizontal scroll does not use the older plain mouse-action form on the validated BT path
@@ -692,6 +720,15 @@ Capture-validated but not enabled in the app UI yet:
 
 Known rejection:
 - slot `0x06` returns error status `0x03` on the validated BLE key family and is treated as software-read-only / unsupported for remapping on the current BLE vendor path
+
+### 6.6 V4 Low-Battery Threshold
+
+Read `05 82 00 00`, write `05 02 00 00` with one raw byte. Local validation
+changed original `4D` to `33`, read back `33`, and restored/read back exact `4D`.
+The app exposes this only for V4 BLE, clamps editor writes to `0C...3F`, and
+requires one authoritative matching readback after ACK; no command retries.
+Hardware recovery bypasses the editor clamp to preserve originals such as `4D`.
+The register scale was not independently calibrated against a discharge event.
 
 ## 7. Complete Transaction Examples
 
@@ -966,7 +1003,7 @@ OpenSnek:
 - rejects parsed DPI results if:
   - the value list is empty
   - active index is out of range
-  - any visible value is outside `100...30000`
+  - any visible value is outside the profile's DPI range (`100...33000` for V4)
 - after a successful DPI write, temporarily masks a small number of stale readbacks if they do not match the just-written state
 
 Those stale-read masks are bounded and expire quickly; they are meant to hide transient firmware lag, not permanent mismatches.
@@ -979,7 +1016,9 @@ Current Swift interpretation:
   - else scale `0...255` to `0...100`
   - exception: on Basilisk V3 X HyperSpeed Bluetooth (`0x00BA`), always scale `0...255` to `0...100`, because that device reports values at or below 100 on the same `0...255` scale (observed raw `0x52` = 82 while the standard BLE Battery Service `0x2A19` and macOS reported 32%)
   - exception: on Basilisk V3 Pro 35K Phantom Green Edition Bluetooth (`0x00D8`), always scale `0...255` to `0...100`; the device reported raw `0x7B`, so values at or below 100 are on the same scale
+  - exception: on Basilisk V4 HyperSpeed Bluetooth (`0x00EC`), always scale `0...255` to `0...100`; the local read returned raw `0xFF`, and the V4 vendor surface is treated as a byte-scale battery register
 - on Basilisk V3 Pro Bluetooth (`0x00AC`) and the Basilisk V3 Pro 35K Phantom Green Edition (`0x00D8`), OpenSnek currently ignores `batteryStatus` for charging UI because the status bit does not reliably mean `charging`; charging only comes from an available USB fallback session
+- V4 Bluetooth charging semantics are not physically confirmed; charging remains unknown unless a trustworthy USB fallback is available, not inferred from vendor status `1`
 - on Basilisk V3 X HyperSpeed Bluetooth (`0x00BA`), OpenSnek ignores `batteryStatus` for charging UI and reports `not charging` because that device is AA-powered
 
 Those semantics are client policy inferred from observed behavior, not a fully decoded vendor spec.
@@ -1027,7 +1066,7 @@ The app may still expose richer lighting on USB HID, but this BLE document only 
 
 - No source-of-truth BLE vendor key for serial read in Swift
 - No source-of-truth BLE vendor key for device mode in Swift
-- No source-of-truth BLE vendor key for low-battery-threshold control in Swift
+- Low-battery-threshold control is shipped only on the locally validated V4 Bluetooth profile; other Bluetooth profiles remain hidden
 - No source-of-truth BLE vendor key for poll-rate control in Swift
 - No decoded BLE vendor path for slot `0x06` / Hypershift-Boss-sniper control remap; treat it as software-read-only on the current BLE path until a separate HID/report command family is validated
 - No complete button action taxonomy for media, macro, or system families

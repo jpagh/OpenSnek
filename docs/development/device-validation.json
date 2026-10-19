@@ -38,11 +38,33 @@
         "scroll_controls": {"status": "unsupported"}
       },
       "limitations": [
-        "This record covers the supplied 2.4 GHz receiver only; separate wired 0x00EB profile has independently validated controls, including wired-only polling. Bluetooth is not mapped.",
+        "This record covers the supplied 2.4 GHz receiver only; wired 0x00EB and Bluetooth 0x00EC have separately scoped validation records.",
         "Nine standard and tilt slots only; AI Prompt Master and Hypershift remain unmapped.",
         "Underglow brightness, off/static/spectrum/wave/pulse supported; Reactive readback succeeds but failed physical validation and is hidden. No software streaming.",
         "No persistence, charging-transition, closed-window service, or sleep/wake validation.",
         "33K ceiling follows vendor specification; high-DPI writes and independent X/Y were not tested."
+      ]
+    },
+    {
+      "profile_id": "basilisk_v4_hyperspeed",
+      "transport": "bluetooth",
+      "product_ids": ["0x00EC"],
+      "features": {
+        "dpi_stages": {"status": "mapped"},
+        "button_remap": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/ble/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/ble/2026-10-18-basilisk-v4-hyperspeed/roundtrips.txt"]},
+        "power_management": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/ble/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/ble/2026-10-18-basilisk-v4-hyperspeed/roundtrips.txt", "captures/ble/2026-10-18-basilisk-v4-hyperspeed/threshold-app-pass.txt", "captures/ble/2026-10-18-basilisk-v4-hyperspeed/threshold-app-restored.json"]},
+        "lighting_brightness": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/ble/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/ble/2026-10-18-basilisk-v4-hyperspeed/roundtrips.txt"]},
+        "independent_xy": {"status": "unsupported"},
+        "poll_rate": {"status": "unsupported"},
+        "advanced_lighting_effects": {"status": "unsupported"},
+        "onboard_profiles": {"status": "unsupported"},
+        "software_lighting": {"status": "unsupported"},
+        "scroll_controls": {"status": "unsupported"}
+      },
+      "limitations": [
+        "Bluetooth PID 0x00EC is locally mapped and read-validated for DPI, battery, power timeout, nine button slots, and underglow brightness.",
+        "Changed-write validation covered one standard button, one wheel-tilt button, power timeout, low-battery threshold (including app apply, clamping, and full-state telemetry), and brightness; all were restored exactly. DPI writes and power-cycle persistence remain untested.",
+        "Target-0 and target-1 V4 Bluetooth color candidates ACKed but did not change authoritative readback, so static color and effects remain hidden, including saved/backend patches and regular probe commands. Charging stays unknown without a trustworthy USB fallback; profile management, poll rate, AI/Hypershift, and scroll controls remain unmapped."
       ]
     },
     {

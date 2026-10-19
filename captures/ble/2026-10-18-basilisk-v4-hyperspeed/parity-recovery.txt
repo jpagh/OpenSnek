@@ -1,0 +1,40 @@
+bt-profile-hid-watch candidates=1 duration=0.5s maxReports=1
+candidate[0] 068e:00ec:97eee623:bluetooth-hid vid=0x068e pid=0x00ec loc=0x97eee623 usage=0x01:0x02 input=9 feature=1 score=64 transport="Bluetooth Low Energy" name=BSK V4 HS
+bt-profile-hid-watch complete reports=0
+warning: IOHIDManagerOpen failed (-536870203); continuing best-effort discovery
+bt-raw-write req=0x30 key=05 02 00 00 payload=4d name="BSK V4 HS"
+notify[0] len=8 req=0x30 status=0x02 len=0 30 00 00 00 00 00 00 02
+ack status=0x02 payloadLength=0
+bt-raw-write req=0x30 key=10 03 01 0a payload=00 00 00 00 00 00 00 00 00 00 name="BSK V4 HS"
+notify[0] len=8 req=0x30 status=0x02 len=0 30 00 00 00 00 00 00 02
+ack status=0x02 payloadLength=0
+bt-raw-write req=0x30 key=10 03 00 0a payload=00 00 00 00 00 00 00 00 00 00 name="BSK V4 HS"
+notify[0] len=8 req=0x30 status=0x02 len=0 30 00 00 00 00 00 00 02
+ack status=0x02 payloadLength=0
+bt-raw-write req=0x30 key=10 05 01 0a payload=ff name="BSK V4 HS"
+notify[0] len=8 req=0x30 status=0x02 len=0 30 00 00 00 00 00 00 02
+ack status=0x02 payloadLength=0
+bt-raw-write req=0x30 key=10 05 00 0a payload=3f name="BSK V4 HS"
+notify[0] len=8 req=0x30 status=0x02 len=0 30 00 00 00 00 00 00 02
+ack status=0x02 payloadLength=0
+bt-raw-read req=0x30 key=05 82 00 00 name="BSK V4 HS"
+notify[0] len=8 req=0x30 status=0x02 len=1 30 01 00 00 00 00 00 02
+notify[1] len=1 4d
+payload[1]: 4d
+bt-raw-read req=0x30 key=10 83 00 0a name="BSK V4 HS"
+notify[0] len=8 req=0x30 status=0x02 len=10 30 0a 00 00 00 00 00 02
+notify[1] len=10 req=0x00 status=0x00 len=0 00 00 00 00 00 00 00 00 00 00
+payload[10]: 00 00 00 00 00 00 00 00 00 00
+bt-raw-read req=0x30 key=10 83 01 0a name="BSK V4 HS"
+notify[0] len=8 req=0x30 status=0x02 len=10 30 0a 00 00 00 00 00 02
+notify[1] len=10 req=0x00 status=0x00 len=0 00 00 00 00 00 00 00 00 00 00
+payload[10]: 00 00 00 00 00 00 00 00 00 00
+bt-raw-read req=0x30 key=10 85 00 0a name="BSK V4 HS"
+notify[0] len=8 req=0x30 status=0x02 len=1 30 01 00 00 00 00 00 02
+notify[1] len=1 3f
+payload[1]: 3f
+bt-raw-read req=0x30 key=10 85 01 0a name="BSK V4 HS"
+notify[0] len=8 req=0x30 status=0x02 len=1 30 01 00 00 00 00 00 02
+notify[1] len=1 ff
+payload[1]: ff
+PASS exact original restore

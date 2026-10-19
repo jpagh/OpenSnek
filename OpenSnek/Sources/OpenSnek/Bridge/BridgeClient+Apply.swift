@@ -12,6 +12,7 @@ extension BridgeClient {
     }
 
     private func applyBluetooth(device: MouseDevice, patch: DevicePatch) async throws -> MouseState {
+        let patch = patch.supportedBluetoothControls(for: device)
         let changedDpi = patch.affectsDpiStages
         let changedLighting = patch.ledBrightness != nil || patch.ledRGB != nil || patch.lightingEffect != nil
         let changedPower = patch.sleepTimeout != nil
@@ -51,7 +52,11 @@ extension BridgeClient {
             guard try await btSetScalar(device: device, key: .powerTimeoutSet, value: clamped, size: 2, payloadLength: 0x02) else { throw BridgeError.commandFailed("Failed to set Bluetooth sleep timeout") }
         }
 
-        return try await buildBluetoothDeltaState(device: device, includeDpi: changedDpi, includeLighting: changedLighting, includePower: changedPower)
+        let threshold = patch.lowBatteryThresholdRaw.map { max(0x0C, min(0x3F, $0)) }
+        if let threshold { guard try await btSetScalar(device: device, key: .lowBatteryThresholdSet, value: threshold, size: 1, payloadLength: 1) else { throw BridgeError.commandFailed("Failed to set Bluetooth low battery threshold") } }
+        let result = try await buildBluetoothDeltaState(device: device, includeDpi: changedDpi, includeLighting: changedLighting, includePower: changedPower, includeLowBatteryThreshold: threshold != nil)
+        if let threshold, result.low_battery_threshold_raw != threshold { throw BridgeError.commandFailed("Bluetooth low battery threshold readback mismatch") }
+        return result
     }
 
     private func applyUSB(device: MouseDevice, patch: DevicePatch, options: ApplyOptions) async throws -> MouseState {

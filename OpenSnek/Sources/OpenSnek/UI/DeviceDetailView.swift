@@ -54,7 +54,7 @@ struct DeviceDetailView: View {
         if selected.showsLightingControls, state.capabilities.lighting { sections.append(.lighting) }
         if state.capabilities.power_management { sections.append(.powerManagement) }
         if selected.transport != .bluetooth, state.capabilities.poll_rate { sections.append(.pollRate) }
-        if selected.transport != .bluetooth, state.low_battery_threshold_raw != nil { sections.append(.lowBatteryThreshold) }
+        if selected.supportsLowBatteryThresholdControls, state.low_battery_threshold_raw != nil { sections.append(.lowBatteryThreshold) }
         if selected.transport != .bluetooth, state.scroll_mode != nil || state.scroll_acceleration != nil || state.scroll_smart_reel != nil { sections.append(.scrollControls) }
         if state.capabilities.button_remap { sections.append(.buttonRemap) }
         return sections

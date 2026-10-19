@@ -128,6 +128,23 @@ final class BLEVendorProtocolTests: XCTestCase {
         XCTAssertEqual(parsed?.pairs.prefix(3), [DpiPair(x: 800, y: 800), DpiPair(x: 1600, y: 1600), DpiPair(x: 3200, y: 3200)])
     }
 
+    func testBuildDpiStagesSupportsBasiliskV4Ceiling() {
+        let current = [800, 1600, 2400, 3200, 33_000]
+        let merged = BLEVendorProtocol.mergedStageSlots(currentSlots: current, requestedCount: 2, requestedValues: [33_000, 40_000], maximumDPI: 33_000)
+        let payload = BLEVendorProtocol.buildDpiStagePayload(active: 1, count: 2, slots: merged, marker: 0x19, stageIDs: [5, 3, 1, 2, 4], maximumDPI: 33_000)
+
+        XCTAssertEqual(merged, [33_000, 33_000, 2400, 3200, 33_000])
+        XCTAssertEqual(BLEVendorProtocol.parseDpiStages(blob: payload)?.values, [33_000, 33_000])
+        XCTAssertEqual(payload[0], 3)
+        XCTAssertEqual(payload[36], 0x19)
+        XCTAssertEqual(BLEVendorProtocol.mergedStageSlots(currentSlots: current, requestedCount: 1, requestedValues: [33_000]), [Int](repeating: 30_000, count: 5))
+    }
+
+    func testV4LowBatteryThresholdKeysUseMappedPowerFamily() {
+        XCTAssertEqual(BLEVendorProtocol.Key.lowBatteryThresholdGet.bytes, [0x05, 0x82, 0x00, 0x00])
+        XCTAssertEqual(BLEVendorProtocol.Key.lowBatteryThresholdSet.bytes, [0x05, 0x02, 0x00, 0x00])
+    }
+
     func testParseFlatDpiPairListFromProfileTargetPayload() {
         let payload = Data([0x20, 0x03, 0x20, 0x03, 0x00, 0x00, 0x84, 0x03, 0x84, 0x03, 0x00, 0x00, 0xD0, 0x07, 0xD0, 0x07, 0x00, 0x00])
 
@@ -236,6 +253,14 @@ final class BLEVendorProtocolTests: XCTestCase {
     func testButtonPayloadScrollRight() {
         let payload = BLEVendorProtocol.buildButtonPayload(slot: 0x35, kind: .scrollRight, hidKey: nil)
         XCTAssertEqual(Array(payload), [0x01, 0x35, 0x00, 0x0E, 0x03, 0x69, 0x00, 0x14, 0x00, 0x00])
+    }
+
+    func testBasiliskV4BluetoothWheelTiltUsesNativeShortFunctionBlock() {
+        let left = BLEVendorProtocol.buildButtonPayload(slot: 0x34, kind: .scrollLeft, hidKey: nil, profileID: .basiliskV4Hyperspeed)
+        let rightDefault = BLEVendorProtocol.buildButtonPayload(slot: 0x35, kind: .default, hidKey: nil, profileID: .basiliskV4Hyperspeed)
+
+        XCTAssertEqual(Array(left), [0x01, 0x34, 0x00, 0x0E, 0x01, 0x68, 0x00, 0x14, 0x00, 0x00])
+        XCTAssertEqual(Array(rightDefault), [0x01, 0x35, 0x00, 0x0E, 0x01, 0x69, 0x00, 0x14, 0x00, 0x00])
     }
 
     func testNagaProBluetoothWheelTiltUsesNagaFunctionBlock() {

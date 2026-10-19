@@ -33,14 +33,32 @@ final class BridgeClientBluetoothFallbackTests: XCTestCase {
         XCTAssertEqual(BridgeClient.resolveBluetoothBatteryState(device: device, vendorRaw: 255, vendorStatus: 1, usbFallback: nil).percent, 100)
     }
 
+    func testResolveBluetoothBatteryStateScalesBasiliskV4RawOn255Scale() {
+        let device = makeBluetoothDevice(productID: 0x00EC, profileID: .basiliskV4Hyperspeed)
+
+        XCTAssertEqual(BridgeClient.resolveBluetoothBatteryState(device: device, vendorRaw: 90, vendorStatus: 1, usbFallback: nil).percent, 35)
+        XCTAssertEqual(BridgeClient.resolveBluetoothBatteryState(device: device, vendorRaw: 255, vendorStatus: 1, usbFallback: nil).percent, 100)
+    }
+
+    func testBasiliskV4DoesNotInventChargingFromUnvalidatedStatus() {
+        let device = makeBluetoothDevice(productID: 0x00EC, profileID: .basiliskV4Hyperspeed)
+        XCTAssertNil(BridgeClient.resolveBluetoothBatteryState(device: device, vendorRaw: 255, vendorStatus: 1, usbFallback: nil).charging)
+        XCTAssertEqual(BridgeClient.resolveBluetoothBatteryState(device: device, vendorRaw: 255, vendorStatus: 1, usbFallback: (100, false)).charging, false)
+        XCTAssertNil(BridgeClient.resolveBluetoothBatteryState(device: makeBluetoothDevice(productID: 0x00EC, profileID: nil), vendorRaw: 255, vendorStatus: 1, usbFallback: nil).charging)
+    }
+
     func testBasiliskV3Pro35KBluetoothUsesZoneStateLighting() async {
         let client = BridgeClient(startHIDMonitoring: false)
         let byProfile = await client.usesBluetoothZoneStateLighting(makeBluetoothDevice(productID: 0x00D8, profileID: .basiliskV3Pro35K))
         let byProductID = await client.usesBluetoothZoneStateLighting(makeBluetoothDevice(productID: 0x00D8, profileID: nil))
+        let v4 = await client.usesBluetoothZoneStateLighting(makeBluetoothDevice(productID: 0x00EC, profileID: .basiliskV4Hyperspeed))
+        let v4ByProductID = await client.usesBluetoothZoneStateLighting(makeBluetoothDevice(productID: 0x00EC, profileID: nil))
         let v3X = await client.usesBluetoothZoneStateLighting(makeBluetoothDevice(productID: 0x00BA, profileID: .basiliskV3XHyperspeed))
 
         XCTAssertTrue(byProfile)
         XCTAssertTrue(byProductID)
+        XCTAssertTrue(v4)
+        XCTAssertTrue(v4ByProductID)
         XCTAssertFalse(v3X)
     }
 

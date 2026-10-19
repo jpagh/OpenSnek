@@ -1,0 +1,24 @@
+{
+  "schema": "v4-ble-parity-1",
+  "device_id": "068e:00ec:97eee623:bluetooth-hid",
+  "originals": {
+    "threshold": "4d",
+    "effect0": "00000000000000000000",
+    "effect1": "00000000000000000000",
+    "brightness0": "3f",
+    "brightness1": "ff"
+  },
+  "phase": "restored",
+  "results": [
+    {
+      "threshold_changed": "33"
+    },
+    {
+      "threshold": "33",
+      "effect0": "00000000000000000000",
+      "effect1": "00000000000000000000",
+      "brightness0": "3f",
+      "brightness1": "ff"
+    }
+  ]
+}

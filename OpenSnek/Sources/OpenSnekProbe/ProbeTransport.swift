@@ -79,6 +79,7 @@ struct BTLightingReadResult: Sendable {
     let target: USBLightingTargetDescriptor
     let brightness: Int?
     let color: RGBPatch?
+    let supportsColor: Bool
 }
 
 /// Stores BT lighting write result data.

@@ -38,7 +38,7 @@ extension OpenSnekProbe {
 
     static func describeBTLightingReadResult(_ result: BTLightingReadResult) -> String {
         let brightness = result.brightness.map(String.init) ?? "read_failed"
-        let color = result.color.map { color in String(format: "%02x%02x%02x", color.r, color.g, color.b) } ?? "read_failed"
+        let color = result.color.map { color in String(format: "%02x%02x%02x", color.r, color.g, color.b) } ?? (result.supportsColor ? "read_failed" : "unsupported")
         return "lighting zone=\(result.target.zoneID) label=\"\(result.target.zoneLabel)\" led=0x\(String(format: "%02x", result.target.ledID)) brightness=\(brightness) color=\(color)"
     }
 

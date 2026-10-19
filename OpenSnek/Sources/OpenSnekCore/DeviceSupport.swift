@@ -341,6 +341,12 @@ public struct DeviceProfile: Hashable, Sendable {
     public func lightingLEDIDs(for zoneID: String? = nil) -> [UInt8]? { lightingTargets(for: zoneID)?.map(\.ledID) }
 
     public var supportsMappedOnboardProfileCRUD: Bool { onboardProfileSupport == .mappedCore }
+
+    /// Zone-state color/brightness addressing differs from the older global frame family.
+    public var usesBluetoothZoneStateLighting: Bool { transport == .bluetooth && (id.isBasiliskV3ProFamily || id == .nagaV2Pro || id == .basiliskV4Hyperspeed) }
+
+    /// Changed-write/readback and raw-original restore are validated only on V4 BLE.
+    public var supportsBluetoothLowBatteryThresholdControls: Bool { transport == .bluetooth && id == .basiliskV4Hyperspeed }
 }
 
 /// Adds scoped helpers for `MouseDevice`.
@@ -369,6 +375,11 @@ public extension MouseDevice {
     var supportsLightingBrightnessControls: Bool {
         guard showsLightingControls else { return false }
         return resolvedProfile?.supportsLightingBrightnessControls ?? false
+    }
+
+    var supportsLowBatteryThresholdControls: Bool {
+        if transport == .bluetooth { return resolvedProfile?.supportsBluetoothLowBatteryThresholdControls ?? false }
+        return resolvedProfile?.supportsPowerManagementControls ?? true
     }
 
     var supportedPollRates: [Int] { resolvedProfile?.supportedPollRates ?? [125, 500, 1000] }
@@ -483,6 +494,16 @@ public enum DeviceProfiles {
             passiveDPIInput: PassiveDPIInputDescriptor(usagePage: 0x01, usage: 0x06, reportID: 0x05, subtype: 0x02, profileSwitchPrefixes: basiliskV3USBFamilyProfileSwitchPrefixes, minInputReportSize: 5, maximumDPI: maximumDPI), supportsIndependentXYDPI: true, supportsScrollModeControls: true,
             supportsLightingBrightnessControls: true, onboardProfileSupport: .mappedCore, onboardProfileCount: 5, isLocallyValidated: isLocallyValidated)
     }
+
+    // Locally validated Bluetooth profile for PID 0x00EC. The V4 uses the shared DPI,
+    // power, and button-bind exchanges, but its only confirmed lighting surface is the
+    // per-zone underglow brightness register. Static-color ACKs did not change the
+    // authoritative zone readback, so color/effect controls stay hidden.
+    public static let basiliskV4Bluetooth = DeviceProfile(
+        id: .basiliskV4Hyperspeed, productName: "Basilisk V4 HyperSpeed", transport: .bluetooth, supportedProducts: [0x00EC], buttonLayout: ButtonSlotLayout(visibleSlots: basiliskV4ButtonSlots, writableSlots: basiliskV4ButtonSlots.map(\.slot)), supportsAdvancedLightingEffects: false,
+        supportedLightingEffects: [], usbLightingLEDIDs: [0x0A], usbLightingZones: [USBLightingZoneDescriptor(id: "underglow", label: "Underglow", ledIDs: [0x0A])],
+        passiveDPIInput: PassiveDPIInputDescriptor(usagePage: 0x01, usage: 0x02, reportID: 0x05, subtype: 0x02, heartbeatSubtype: 0x10, minInputReportSize: 7, maxFeatureReportSize: 1, maximumDPI: 33_000), supportsLightingBrightnessControls: true, onboardProfileCount: 1,
+        supportsPollRateControls: false)
 
     public static let basiliskV3XBluetooth = DeviceProfile(
         id: .basiliskV3XHyperspeed, productName: "Basilisk V3 X HyperSpeed", transport: .bluetooth, supportedProducts: [0x00BA],
@@ -729,8 +750,8 @@ public enum DeviceProfiles {
         formFactor: .accessory, supportsDPIControls: false, supportsPollRateControls: false, supportsPowerManagementControls: false, supportsButtonRemapControls: false, usbBrightnessLEDIDs: [0x00], isLocallyValidated: false)
 
     public static let all: [DeviceProfile] = [
-        basiliskV4USB, basiliskV4WiredUSB, basiliskV3XUSB, basiliskV3USB, basiliskV3ProUSB, basiliskV335KUSB, basiliskV3XBluetooth, basiliskV3ProBluetooth, basiliskV3Pro35KPhantomGreenBluetooth, orochiV2Bluetooth, nagaProUSB, nagaProBluetooth, nagaV2ProUSB, nagaV2ProBluetooth, basiliskUSB,
-        lanceheadTEUSB, huntsmanMiniUSB, tartarusProUSB, mouseDockUSB
+        basiliskV4USB, basiliskV4WiredUSB, basiliskV4Bluetooth, basiliskV3XUSB, basiliskV3USB, basiliskV3ProUSB, basiliskV335KUSB, basiliskV3XBluetooth, basiliskV3ProBluetooth, basiliskV3Pro35KPhantomGreenBluetooth, orochiV2Bluetooth, nagaProUSB, nagaProBluetooth, nagaV2ProUSB, nagaV2ProBluetooth,
+        basiliskUSB, lanceheadTEUSB, huntsmanMiniUSB, tartarusProUSB, mouseDockUSB
     ]
 
     public static func resolve(vendorID: Int, productID: Int, transport: DeviceTransportKind) -> DeviceProfile? { all.first(where: { $0.matches(vendorID: vendorID, productID: productID, transport: transport) }) }

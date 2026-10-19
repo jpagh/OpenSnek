@@ -13,7 +13,7 @@ extension BridgeClient {
 
     /// Whether this Bluetooth device uses the per-zone state lighting surface (`10 83`/`10 03`
     /// color, `10 85`/`10 05` brightness) instead of the legacy single-frame lighting keys.
-    func usesBluetoothZoneStateLighting(_ device: MouseDevice) -> Bool { device.transport == .bluetooth && (Self.isBasiliskV3ProFamilyBluetooth(device) || device.profile_id == .nagaV2Pro || device.product_id == 0x00A9) }
+    func usesBluetoothZoneStateLighting(_ device: MouseDevice) -> Bool { DeviceProfiles.resolve(vendorID: device.vendor_id, productID: device.product_id, transport: device.transport)?.usesBluetoothZoneStateLighting == true }
 
     nonisolated static func isBasiliskV3ProFamilyBluetooth(_ device: MouseDevice) -> Bool {
         guard device.transport == .bluetooth else { return false }
@@ -40,14 +40,15 @@ extension BridgeClient {
     func btNotifySummary(_ notifies: [Data]) -> String { notifies.map(btHex).joined(separator: " | ") }
 
     static func resolveBluetoothBatteryState(device: MouseDevice, vendorRaw: Int?, vendorStatus: Int?, usbFallback: (Int, Bool?)?) -> BluetoothBatteryState {
-        // Both devices report a 0-255 byte even below 100. Preserve HyperSpeed's rounded
+        // These devices report a 0-255 byte even below 100. Preserve HyperSpeed's rounded
         // conversion and the Naga V2 Pro's USB-compatible truncation.
         let isV3XBluetooth = device.transport == .bluetooth && (device.profile_id == .basiliskV3XHyperspeed || device.product_id == 0x00BA)
+        let isV4Bluetooth = device.transport == .bluetooth && (device.profile_id == .basiliskV4Hyperspeed || device.product_id == 0x00EC)
         let isNagaV2Bluetooth = device.transport == .bluetooth && (device.profile_id == .nagaV2Pro || device.product_id == 0x00A9)
         // The V3 Pro 35K reported raw 0x7B over Bluetooth, so its byte is on the 0-255 scale even below 100.
         let isV3Pro35KBluetooth = device.transport == .bluetooth && (device.profile_id == .basiliskV3Pro35K || device.product_id == 0x00D8)
         let vendorPercent = vendorRaw.map { raw in
-            if isV3XBluetooth { return Int((Double(min(max(raw, 0), 255)) / 255.0 * 100.0).rounded()) }
+            if isV3XBluetooth || isV4Bluetooth { return Int((Double(min(max(raw, 0), 255)) / 255.0 * 100.0).rounded()) }
             return (isNagaV2Bluetooth || isV3Pro35KBluetooth || raw > 100) ? Int((Double(raw) / 255.0) * 100.0) : raw
         }
         let charging: Bool?
@@ -55,7 +56,8 @@ extension BridgeClient {
             charging = false
         } else if device.transport == .bluetooth, device.profile_id == .orochiV2 || device.product_id == 0x0095 {
             charging = false
-        } else if isBasiliskV3ProFamilyBluetooth(device) {
+        } else if isBasiliskV3ProFamilyBluetooth(device) || isV4Bluetooth {
+            // V4's status=1 has no validated charging meaning. Do not invent telemetry.
             charging = usbFallback?.1
         } else if device.transport == .bluetooth, device.profile_id == .nagaV2Pro || device.product_id == 0x00A9 {
             // The vendor status bit is unreliable on this family; only trust a USB fallback session.
@@ -133,6 +135,7 @@ extension BridgeClient {
             lighting = supportsLighting ? (try? await btGetLightingValue(device: device)) : nil
             sleepTimeout = (try? await btGetScalar(device: device, key: .powerTimeoutGet, size: 2)) ?? nil
         }
+        let lowBatteryThreshold = device.supportsLowBatteryThresholdControls ? (try? await btGetScalar(device: device, key: .lowBatteryThresholdGet, size: 1)) : nil
         let activeOnboardProfile = profile?.supportsMappedOnboardProfileCRUD == true ? (try? await btReadActiveOnboardProfileID(device: device)) ?? nil : nil
 
         let usbBatteryFallback = session.flatMap { try? getBattery($0, device) }
@@ -145,13 +148,13 @@ extension BridgeClient {
                 if let pairs = btStages?.pairs, active < pairs.count { return pairs[active] }
                 let value = values[active]
                 return DpiPair(x: value, y: value)
-            }(), dpi_stages: DpiStages(active_stage: btStages?.active, values: btStages?.values, pairs: btStages?.pairs), poll_rate: nil, sleep_timeout: sleepTimeout, device_mode: nil, active_onboard_profile: activeOnboardProfile,
+            }(), dpi_stages: DpiStages(active_stage: btStages?.active, values: btStages?.values, pairs: btStages?.pairs), poll_rate: nil, sleep_timeout: sleepTimeout, device_mode: nil, low_battery_threshold_raw: lowBatteryThreshold, active_onboard_profile: activeOnboardProfile,
             onboard_profile_count: profile?.supportsMappedOnboardProfileCRUD == true ? profile?.onboardProfileCount : nil, led_value: lighting, capabilities: Capabilities(dpi_stages: true, poll_rate: false, power_management: true, button_remap: true, lighting: supportsLighting))
     }
 
     nonisolated static func shouldPollBluetoothGenericTelemetryForReadState(supportsMappedOnboardProfiles: Bool) -> Bool { !supportsMappedOnboardProfiles }
 
-    func buildBluetoothDeltaState(device: MouseDevice, includeDpi: Bool, includeLighting: Bool, includePower: Bool) async throws -> MouseState {
+    func buildBluetoothDeltaState(device: MouseDevice, includeDpi: Bool, includeLighting: Bool, includePower: Bool, includeLowBatteryThreshold: Bool = false) async throws -> MouseState {
         let supportsLighting = device.showsLightingControls
         let btStages: BLEVendorProtocol.DpiStagesRead?
         if includeDpi { btStages = try await btGetDpiStages(device: device) } else { btStages = nil }
@@ -162,6 +165,8 @@ extension BridgeClient {
         let sleepTimeout: Int?
         if includePower { sleepTimeout = try await btGetScalar(device: device, key: .powerTimeoutGet, size: 2) } else { sleepTimeout = nil }
 
+        let lowBatteryThreshold = includeLowBatteryThreshold && device.supportsLowBatteryThresholdControls ? try await btGetScalar(device: device, key: .lowBatteryThresholdGet, size: 1) : nil
+
         let dpiPair: DpiPair? = {
             guard let active = btStages?.active, let values = btStages?.values, active >= 0, active < values.count else { return nil }
             if let pairs = btStages?.pairs, active < pairs.count { return pairs[active] }
@@ -171,7 +176,7 @@ extension BridgeClient {
 
         return MouseState(
             device: DeviceSummary(id: device.id, product_name: device.product_name, serial: device.serial, transport: device.transport, firmware: nil), connection: "Bluetooth", battery_percent: nil, charging: nil, dpi: dpiPair,
-            dpi_stages: DpiStages(active_stage: btStages?.active, values: btStages?.values, pairs: btStages?.pairs), poll_rate: nil, sleep_timeout: sleepTimeout, device_mode: nil, led_value: lighting,
+            dpi_stages: DpiStages(active_stage: btStages?.active, values: btStages?.values, pairs: btStages?.pairs), poll_rate: nil, sleep_timeout: sleepTimeout, device_mode: nil, low_battery_threshold_raw: lowBatteryThreshold, led_value: lighting,
             capabilities: Capabilities(dpi_stages: true, poll_rate: false, power_management: true, button_remap: true, lighting: supportsLighting))
     }
 
@@ -302,9 +307,10 @@ extension BridgeClient {
         let defaultStageIDs = (1...DeviceProfiles.maximumDpiStageCount).map(UInt8.init)
         let currentStageIDs = Array((current?.stageIDs ?? defaultStageIDs).prefix(DeviceProfiles.maximumDpiStageCount))
         let requestedPairs = pairs ?? values.map { DpiPair(x: $0, y: $0) }
-        let mergedPairs = BLEVendorProtocol.mergedStagePairs(currentPairs: currentPairs, requestedCount: count, requestedPairs: requestedPairs)
+        let maximumDPI = DeviceProfiles.dpiRange(for: device).upperBound
+        let mergedPairs = BLEVendorProtocol.mergedStagePairs(currentPairs: currentPairs, requestedCount: count, requestedPairs: requestedPairs, maximumDPI: maximumDPI)
 
-        let payload = BLEVendorProtocol.buildDpiStagePayload(active: active, count: count, pairs: mergedPairs, marker: marker, stageIDs: currentStageIDs)
+        let payload = BLEVendorProtocol.buildDpiStagePayload(active: active, count: count, pairs: mergedPairs, marker: marker, stageIDs: currentStageIDs, maximumDPI: maximumDPI)
         let req = nextBTReq()
         let header = BLEVendorProtocol.buildWriteHeader(req: req, payloadLength: 0x26, key: .dpiStagesSet)
         let notifies = try await btExchange([header, payload.prefix(20), payload.suffix(from: 20)], timeout: 0.9, device: device)

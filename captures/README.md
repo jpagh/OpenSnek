@@ -10,6 +10,11 @@ This directory stores BLE protocol captures used to derive and validate `tools/p
     brightness changes, exact restored journals, and explicit untested limits.
   - Retains the initial low-battery-clamp restore failure and verified recovery.
 
+- `ble/2026-10-18-basilisk-v4-hyperspeed/`
+  - Local Bluetooth PID `0x00EC` bring-up: read-only DPI/battery/power/button discovery,
+    brightness and power round-trips, one standard-button and one wheel-tilt restore,
+    and the rejected color-readback claim.
+
 - `ble/filteredcap.pcapng`
   - First broad Synapse BLE capture.
   - Established vendor write/notify framing:

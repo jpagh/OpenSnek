@@ -37,7 +37,7 @@ Button remap keyboard actions support modifier chords on shipped USB and Bluetoo
 
 | Device | USB | BT | Biggest Gaps |
 |---|---|---|---|
-| Basilisk V4 HyperSpeed | `Validated` (receiver and wired) | `Not shipped` | DPI/stages, battery/power, nine standard/tilt bindings, underglow brightness and off/static/spectrum/wave/pulse effects; AI/Hypershift remain unmapped, Reactive hidden after physical failure; wired independently validates the same controls plus 125/250/500/1000 Hz polling |
+| Basilisk V4 HyperSpeed | `Validated` (receiver and wired) | `Validated` (limited) | Bluetooth PID `0x00EC` maps DPI reads, battery, sleep/low-battery controls, nine standard/tilt bindings, and underglow brightness. DPI writes, persistence, charging semantics, color/effects, AI/Hypershift, poll rate, profiles, and scroll controls remain untested or unmapped; wired independently validates the same controls plus 125/250/500/1000 Hz polling |
 | Basilisk V3 X HyperSpeed | `Validated` | `Validated` | Bluetooth keeps lighting to static color, hides poll-rate and threshold controls, and leaves the Hypershift/sniper path read-only |
 | Basilisk V3 | `Mapped` | `No transport` | Shares the Basilisk V3 USB family configuration, but remains unvalidated on local hardware |
 | Basilisk V3 Pro | `Validated` | `Validated` | Ships mapped onboard profile CRUD on USB and Bluetooth; Bluetooth keeps lighting static-only, hides poll-rate and threshold controls, and does not ship clutch/profile-button remap |
@@ -80,6 +80,23 @@ path verified polling changes and exact original 1000 Hz restoration. Higher rat
 lifecycle remain untested. Power-cycle
 persistence, charging transitions, and closed-window service/sleep recovery remain
 untested. See [evidence and limits](../captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md).
+
+### Basilisk V4 HyperSpeed Bluetooth
+
+Bluetooth PID `0x00EC` (`BSK V4 HS`) uses the shared BLE vendor framing. Local
+validation mapped the two-stage DPI read (`0B 84 01 00`), vendor battery/power
+reads, nine button slots (`01..05`, `09`, `0A`, `34`, `35`), and the single
+underglow brightness target (`10 85 01 0A` / `10 05 01 0A`). Changed writes for
+brightness, power timeout, low-battery threshold, one standard button, and one
+wheel-tilt button were read back and restored exactly. The threshold is exposed
+in the BLE editor with strict changed-value readback and raw-original restoration
+in the scoped hardware test.
+
+DPI changed writes and persistence are still untested. The static-color candidate
+ACKed without changing its authoritative readback, so Bluetooth color/effect
+controls remain hidden, and saved/backend patches and regular probe commands
+cannot bypass that limit. Charging stays unknown without a trustworthy USB
+fallback; profiles, poll rate, AI/Hypershift, and scroll controls are not claimed. See [Bluetooth evidence and limits](../captures/ble/2026-10-18-basilisk-v4-hyperspeed/README.md).
 
 ## Basilisk V3 USB Family Assumptions
 

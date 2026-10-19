@@ -84,6 +84,8 @@ public enum BLEVendorProtocol {
         public static let lightingFrameSet = Key(b0: 0x10, b1: 0x04, b2: 0x00, b3: 0x00)
         public static let powerTimeoutGet = Key(b0: 0x05, b1: 0x84, b2: 0x00, b3: 0x00)
         public static let powerTimeoutSet = Key(b0: 0x05, b1: 0x04, b2: 0x00, b3: 0x00)
+        public static let lowBatteryThresholdGet = Key(b0: 0x05, b1: 0x82, b2: 0x00, b3: 0x00)
+        public static let lowBatteryThresholdSet = Key(b0: 0x05, b1: 0x02, b2: 0x00, b3: 0x00)
         public static let batteryRaw = Key(b0: 0x05, b1: 0x81, b2: 0x00, b3: 0x01)
         public static let batteryStatus = Key(b0: 0x05, b1: 0x80, b2: 0x00, b3: 0x01)
 
@@ -356,11 +358,14 @@ public enum BLEVendorProtocol {
         return Data(bytes)
     }
 
-    public static func mergedStageSlots(currentSlots: [Int], requestedCount: Int, requestedValues: [Int]) -> [Int] { mergedStagePairs(currentPairs: currentSlots.map { DpiPair(x: $0, y: $0) }, requestedCount: requestedCount, requestedPairs: requestedValues.map { DpiPair(x: $0, y: $0) }).map(\.x) }
+    public static func mergedStageSlots(currentSlots: [Int], requestedCount: Int, requestedValues: [Int], maximumDPI: Int = DeviceProfiles.defaultMaximumDPI) -> [Int] {
+        mergedStagePairs(currentPairs: currentSlots.map { DpiPair(x: $0, y: $0) }, requestedCount: requestedCount, requestedPairs: requestedValues.map { DpiPair(x: $0, y: $0) }, maximumDPI: maximumDPI).map(\.x)
+    }
 
-    public static func mergedStagePairs(currentPairs: [DpiPair], requestedCount: Int, requestedPairs: [DpiPair]) -> [DpiPair] {
+    public static func mergedStagePairs(currentPairs: [DpiPair], requestedCount: Int, requestedPairs: [DpiPair], maximumDPI: Int = DeviceProfiles.defaultMaximumDPI) -> [DpiPair] {
         let count = DeviceProfiles.clampDpiStageCount(requestedCount)
-        let clamped = requestedPairs.map { pair in DpiPair(x: DeviceProfiles.clampDPI(pair.x, profileID: nil), y: DeviceProfiles.clampDPI(pair.y, profileID: nil)) }
+        let maximum = max(DeviceProfiles.minimumDPI, maximumDPI)
+        let clamped = requestedPairs.map { pair in DpiPair(x: max(DeviceProfiles.minimumDPI, min(maximum, pair.x)), y: max(DeviceProfiles.minimumDPI, min(maximum, pair.y))) }
         var pairs = Array(currentPairs.prefix(DeviceProfiles.maximumDpiStageCount))
         if pairs.count < DeviceProfiles.maximumDpiStageCount { pairs += Array(repeating: clamped.first ?? DpiPair(x: 800, y: 800), count: DeviceProfiles.maximumDpiStageCount - pairs.count) }
 
@@ -373,16 +378,19 @@ public enum BLEVendorProtocol {
         return Array(pairs.prefix(DeviceProfiles.maximumDpiStageCount))
     }
 
-    public static func buildDpiStagePayload(active: Int, count: Int, slots: [Int], marker: UInt8, stageIDs: [UInt8]? = nil) -> Data { buildDpiStagePayload(active: active, count: count, pairs: slots.map { DpiPair(x: $0, y: $0) }, marker: marker, stageIDs: stageIDs) }
+    public static func buildDpiStagePayload(active: Int, count: Int, slots: [Int], marker: UInt8, stageIDs: [UInt8]? = nil, maximumDPI: Int = DeviceProfiles.defaultMaximumDPI) -> Data {
+        buildDpiStagePayload(active: active, count: count, pairs: slots.map { DpiPair(x: $0, y: $0) }, marker: marker, stageIDs: stageIDs, maximumDPI: maximumDPI)
+    }
 
-    public static func buildDpiStagePayload(active: Int, count: Int, pairs: [DpiPair], marker: UInt8, stageIDs: [UInt8]? = nil) -> Data {
+    public static func buildDpiStagePayload(active: Int, count: Int, pairs: [DpiPair], marker: UInt8, stageIDs: [UInt8]? = nil, maximumDPI: Int = DeviceProfiles.defaultMaximumDPI) -> Data {
         let clippedCount = DeviceProfiles.clampDpiStageCount(count)
         let defaultStageIDs = (0..<DeviceProfiles.maximumDpiStageCount).map(UInt8.init)
         var ids = Array((stageIDs ?? defaultStageIDs).prefix(DeviceProfiles.maximumDpiStageCount))
         while ids.count < DeviceProfiles.maximumDpiStageCount { ids.append(ids.last.map { $0 &+ 1 } ?? UInt8(ids.count)) }
         let activeIndex = max(0, min(clippedCount - 1, active))
         var out = Data([ids[activeIndex], UInt8(clippedCount)])
-        let clamped = pairs.map { pair in DpiPair(x: max(100, min(30000, pair.x)), y: max(100, min(30000, pair.y))) }
+        let maximum = max(DeviceProfiles.minimumDPI, maximumDPI)
+        let clamped = pairs.map { pair in DpiPair(x: max(DeviceProfiles.minimumDPI, min(maximum, pair.x)), y: max(DeviceProfiles.minimumDPI, min(maximum, pair.y))) }
 
         for i in 0..<5 {
             let pair = clamped[min(i, max(0, clamped.count - 1))]
@@ -428,7 +436,10 @@ public enum BLEVendorProtocol {
         switch kind {
         case .default:
             if slot == 0x60 { return Data([0x01, slot, 0x00, 0x06, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00]) }
-            if let buttonID = defaultHorizontalScrollButtonID(forSlot: slot) { return buildRawFunctionBlockPayload(slot: slot, functionBlock: [0x0E, 0x03, buttonID, 0x00, basiliskV3FamilyHorizontalScrollTurboRate, 0x00, 0x00]) }
+            if let buttonID = defaultHorizontalScrollButtonID(forSlot: slot) {
+                let length: UInt8 = isBasiliskV4(profileID) ? 0x01 : 0x03
+                return buildRawFunctionBlockPayload(slot: slot, functionBlock: [0x0E, length, buttonID, 0x00, basiliskV3FamilyHorizontalScrollTurboRate, 0x00, 0x00])
+            }
             if let buttonID = defaultMouseButtonID(forSlot: slot) { return Data([0x01, slot, 0x00, 0x01, 0x01, buttonID, 0x00, 0x00, 0x00, 0x00]) }
             return Data([0x01, slot, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
         case .dpiCycle: return Data([0x01, slot, 0x00, 0x06, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00])
@@ -440,8 +451,12 @@ public enum BLEVendorProtocol {
         case .middleClick: return Data([0x01, slot, 0x00, 0x01, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00])
         case .scrollUp: return Data([0x01, slot, 0x00, 0x01, 0x01, 0x09, 0x00, 0x00, 0x00, 0x00])
         case .scrollDown: return Data([0x01, slot, 0x00, 0x01, 0x01, 0x0A, 0x00, 0x00, 0x00, 0x00])
-        case .scrollLeft: return buildRawFunctionBlockPayload(slot: slot, functionBlock: [0x0E, 0x03, 0x68, 0x00, basiliskV3FamilyHorizontalScrollTurboRate, 0x00, 0x00])
-        case .scrollRight: return buildRawFunctionBlockPayload(slot: slot, functionBlock: [0x0E, 0x03, 0x69, 0x00, basiliskV3FamilyHorizontalScrollTurboRate, 0x00, 0x00])
+        case .scrollLeft:
+            let length: UInt8 = isBasiliskV4(profileID) ? 0x01 : 0x03
+            return buildRawFunctionBlockPayload(slot: slot, functionBlock: [0x0E, length, 0x68, 0x00, basiliskV3FamilyHorizontalScrollTurboRate, 0x00, 0x00])
+        case .scrollRight:
+            let length: UInt8 = isBasiliskV4(profileID) ? 0x01 : 0x03
+            return buildRawFunctionBlockPayload(slot: slot, functionBlock: [0x0E, length, 0x69, 0x00, basiliskV3FamilyHorizontalScrollTurboRate, 0x00, 0x00])
         case .mouseBack: return Data([0x01, slot, 0x00, 0x01, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00])
         case .mouseForward: return Data([0x01, slot, 0x00, 0x01, 0x01, 0x05, 0x00, 0x00, 0x00, 0x00])
         case .keyboardSimple: return Data([0x01, slot, 0x00, 0x02, 0x02, hidModifiers, hidKey ?? 0x04, 0x00, 0x00, 0x00])
@@ -517,6 +532,8 @@ public enum BLEVendorProtocol {
     }
 
     private static func buildRawFunctionBlockPayload(slot: UInt8, functionBlock: [UInt8]) -> Data { Data([0x01, slot, 0x00] + functionBlock) }
+
+    private static func isBasiliskV4(_ profileID: DeviceProfileID?) -> Bool { profileID == .basiliskV4Hyperspeed || profileID == .basiliskV4HyperspeedWired }
 
     private static func horizontalScrollButtonID(for kind: ButtonBindingKind) -> UInt8? {
         switch kind {

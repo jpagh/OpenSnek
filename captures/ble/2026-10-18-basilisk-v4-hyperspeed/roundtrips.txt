@@ -1,0 +1,58 @@
+# Basilisk V4 HyperSpeed Bluetooth changed-write round-trips
+# Date: 2026-10-18; app/service stopped; preferred name BSK V4 HS
+
+## Underglow brightness
+
+Baseline:
+  read  key=10 85 01 0A -> FF
+Changed:
+  write key=10 05 01 0A payload=60 -> status=02
+  read  key=10 85 01 0A -> 60
+Restore:
+  write key=10 05 01 0A payload=FF -> status=02
+  read  key=10 85 01 0A -> FF
+
+## Power timeout
+
+Baseline:
+  read  key=05 84 00 00 -> 2C 01 (300 seconds)
+Changed:
+  write key=05 04 00 00 payload=F0 00 -> status=02
+  read  key=05 84 00 00 -> F0 00 (240 seconds)
+Restore:
+  write key=05 04 00 00 payload=2C 01 -> status=02
+  read  key=05 84 00 00 -> 2C 01 (300 seconds)
+
+## Button slot 01
+
+Baseline:
+  read  key=08 84 00 01 -> decoded block 01 01 01 00 00 00 00
+Changed:
+  write key=08 04 01 01 payload=01 01 00 01 01 02 00 00 00 00 -> status=02
+  read  key=08 84 00 01 -> payload lane changed to button ID 02
+Restore:
+  write key=08 04 01 01 payload=01 01 00 01 01 01 00 00 00 00 -> status=02
+  read  key=08 84 00 01 -> decoded block 01 01 01 00 00 00 00
+
+## Wheel-tilt slot 34
+
+Baseline:
+  read  key=08 84 00 34 -> decoded block 0E 01 68 00 14 00 00
+Changed:
+  write key=08 04 01 34 payload=01 34 00 01 01 02 00 00 00 00 -> status=02
+  read  key=08 84 00 34 -> payload lane changed to mouse button ID 02
+Restore:
+  write key=08 04 01 34 payload=01 34 00 0E 01 68 00 14 00 00 -> status=02
+  read  key=08 84 00 34 -> decoded block 0E 01 68 00 14 00 00
+
+## Color candidate (not shipped)
+
+Baseline:
+  read  key=10 83 00 0A -> 00 00 00 00 00 00 00 00 00 00
+Changed:
+  write key=10 03 00 0A payload=01 00 00 01 00 FF 40 00 00 00 -> status=02
+  read  key=10 83 00 0A -> 00 00 00 00 00 00 00 00 00 00
+Restore:
+  write key=10 03 00 0A payload=00 00 00 00 00 00 00 00 00 00 -> status=02
+  read  key=10 83 00 0A -> 00 00 00 00 00 00 00 00 00 00
+Result: ACK without authoritative readback change; color/effect controls remain hidden.

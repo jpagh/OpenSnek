@@ -1,0 +1,37 @@
+# Basilisk V4 HyperSpeed Bluetooth read-only discovery
+# Date: 2026-10-18
+# Peripheral name: BSK V4 HS
+# App/service stopped before vendor probes.
+
+HID candidate:
+  068e:00ec:97eee623:bluetooth-hid pid=0x00ec usage=0x01:0x02 input=9 feature=1 name=BSK V4 HS
+  3-second passive HID watch: 0 reports
+
+Key                                Status  Payload
+05 81 00 01 battery raw            02      ff
+05 80 00 01 battery status         02      01
+05 84 00 00 power timeout           02      2c 01
+05 82 00 00 threshold candidate    02      4d
+10 80 00 01 lighting zones         02      0a
+0B 84 01 00 DPI stages              02      02 02 01 b0 04 b0 04 00 00 02 98 08 98 08 00
+0B 81 00 00 DPI scalar              02      98 08 98 08 00 00
+0B 82 00 00 DPI pair list           02      b0 04 b0 04 00 00 98 08 98 08 00 00 80 0c 80 0c 00 00 80 0c 80 0c 00 00 00 19 00 19 00 19
+0B 83 00 00 DPI active token         02      02
+10 85 01 01 legacy brightness       03      rejected
+10 84 00 00 legacy color            03      rejected
+10 85 01 0A V4 brightness            02      ff
+10 83 00 0A V4 color state           02      00 00 00 00 00 00 00 00 00 00
+
+Button read keys 08 84 00 <slot> returned successful 16-byte frames and these decoded 7-byte blocks:
+  slot 01: 01 01 01 00 00 00 00
+  slot 02: 01 01 02 00 00 00 00
+  slot 03: 01 01 03 00 00 00 00
+  slot 04: 01 01 04 00 00 00 00
+  slot 05: 01 01 05 00 00 00 00
+  slot 09: 01 01 09 00 00 00 00
+  slot 0A: 01 01 0A 00 00 00 00
+  slot 34: 0E 01 68 00 14 00 00
+  slot 35: 0E 01 69 00 14 00 00
+
+Unclaimed controls:
+  slot 06, slot 60, slot 0F, and slot 6A did not return decodable button blocks.

@@ -56,7 +56,7 @@ actor ProbeBridge {
         guard let targets = try await bluetoothLightingTargets(preferredPeripheralName: preferredPeripheralName, zoneID: zoneID) else { return nil }
 
         let profile = await bluetoothLightingProfile(preferredPeripheralName: preferredPeripheralName)
-        let usesZoneState = profile?.id.isBasiliskV3ProFamily == true
+        let usesZoneState = profile?.usesBluetoothZoneStateLighting == true
         var results: [BTLightingReadResult] = []
         results.reserveCapacity(targets.count)
 
@@ -68,7 +68,9 @@ actor ProbeBridge {
             }
 
             let color: RGBPatch?
-            if usesZoneState {
+            if profile?.supportedLightingEffects.isEmpty == true {
+                color = nil
+            } else if usesZoneState {
                 let colorResult = try await rawRead(key: BLEVendorProtocol.Key.lightingZoneStateGet(ledID: target.ledID).bytes, timeout: 1.0, preferredPeripheralName: preferredPeripheralName)
                 color = colorResult.payload.flatMap(BLEVendorProtocol.parseV3ProLightingZoneStatePayload)
             } else {
@@ -79,7 +81,7 @@ actor ProbeBridge {
                 }
             }
 
-            results.append(BTLightingReadResult(target: target, brightness: brightness, color: color))
+            results.append(BTLightingReadResult(target: target, brightness: brightness, color: color, supportsColor: profile?.supportedLightingEffects.isEmpty != true))
         }
         return results
     }
@@ -102,7 +104,8 @@ actor ProbeBridge {
         guard let targets = try await bluetoothLightingTargets(preferredPeripheralName: preferredPeripheralName, zoneID: zoneID) else { return nil }
 
         let profile = await bluetoothLightingProfile(preferredPeripheralName: preferredPeripheralName)
-        let usesZoneState = profile?.id.isBasiliskV3ProFamily == true
+        guard profile == nil || profile?.supportedLightingEffects.contains(.staticColor) == true else { throw ProbeError.protocolError("Static color is not supported by this Bluetooth profile; use bt-raw-write only for explicitly journaled research") }
+        let usesZoneState = profile?.usesBluetoothZoneStateLighting == true
         let v3ProPayload = Array(BLEVendorProtocol.buildV3ProLightingZoneStatePayload(r: color.r, g: color.g, b: color.b))
         let legacyPayload: [UInt8] = [0x04, 0x00, 0x00, 0x00, 0x00, UInt8(max(0, min(255, color.r))), UInt8(max(0, min(255, color.g))), UInt8(max(0, min(255, color.b)))]
 
