@@ -12,7 +12,7 @@
 
 ![Screenshot](/docs/media/screenshot.png)
 
-OpenSnek is an open source native macOS app for configuring supported Razer mice over USB or Bluetooth, with early lighting-only support for select Razer keyboards and keypads.
+OpenSnek is an open source native macOS app for configuring supported Razer mice over USB or Bluetooth, with early lighting-only support for select Razer keyboards, keypads, and charging accessories.
 
 ## Highlights
 
@@ -27,21 +27,27 @@ OpenSnek is an open source native macOS app for configuring supported Razer mice
 
 ## Supported Devices
 
-Support is transport-specific. A mouse may be supported over USB, Bluetooth, or both, depending on what has been captured, tested, and validated in the app.
+Support is transport-specific. A device may be supported over USB, Bluetooth, or both, depending on what has been captured, tested, and validated in the app.
 
 | Device | USB | Bluetooth | Notes |
 |---|---|---|---|
-| Basilisk V4 HyperSpeed | Validated (receiver and wired) | Validated (limited) | Bluetooth `0x00EC` maps DPI reads, battery, sleep/low-battery controls, nine standard/tilt bindings, and underglow brightness. DPI writes, persistence, charging semantics, color/effects, AI/Hypershift, poll rate, profiles, and scroll controls remain untested or unmapped. Wired `0x00EB` independently supports the same validated controls plus 125/250/500/1000 Hz polling; Windows captures additionally map receiver-only 500/1000 Hz polling, AI/Hypershift/bottom-button remaps, Default representations and turbo timing with strict readback; macOS validation of these additions is pending |
+| Basilisk V4 HyperSpeed | Validated (receiver) | Validated (limited) | Bluetooth `0x00EC` maps DPI reads, battery, sleep/low-battery controls, nine standard/tilt bindings, and underglow brightness. DPI writes, persistence, charging semantics, color/effects, AI/Hypershift, poll rate, profiles, and scroll controls remain untested or unmapped on Bluetooth. Windows captures additionally map receiver-only 500/1000 Hz polling, AI/Hypershift/bottom-button remaps, Default representations and turbo timing with strict readback; macOS validation of these additions is pending |
+| Basilisk V4 HyperSpeed (Wired) | Validated | No | Independently validated cable profile `0x00EB`: DPI/stages, battery/power, nine standard/tilt bindings, underglow lighting, and 125/250/500/1000 Hz polling. The receiver's new extra-control mappings are not claimed for this transport |
 | Basilisk V3 X HyperSpeed | Validated | Validated | |
 | Basilisk V3 | Mapped | No | OpenRazer-backed USB profile, sharing the Basilisk V3 USB family configuration with a `26,000` DPI ceiling |
 | Basilisk V3 Pro | Validated | Validated | |
 | Basilisk V3 35K | Validated | No | Shares the Basilisk V3 USB family configuration |
 | Basilisk V3 Pro 35K Phantom Green Edition | Not yet | Contributor validated | Contributor validated Bluetooth DPI stages, battery, two-zone lighting (no logo LED), and button remap. Onboard profile CRUD stays hidden and Bluetooth changes reset on power cycle; use restore-on-connect |
 | Orochi V2 | Not yet | Contributor validated | Contributor validated Bluetooth DPI stages and battery; button remap is profile-mapped pending hardware readback validation. 2.4 GHz HyperSpeed dongle not yet supported. Mouse has no RGB lighting. |
+| Naga Pro | Contributor validated | Contributor validated | All three side panels (2-button, 6-button, 12-button) press-validated with captured native defaults, and five-slot onboard profile workflows ship. The underside profile button (slot `14`) cycles saved profiles and is remappable, with Default restoring the cycle; OpenSnek provides no scroll-wheel adjustment for this mouse |
+| Naga V2 Pro | Contributor validated | Contributor validated | Wired, 2.4 GHz receiver, and Bluetooth share DPI stages, battery, side-panel remapping, and logo + 12-button side-panel lighting. The 6- and 2-button plates have no lighting, and the two top DPI buttons stay preserved read-only. OpenSnek provides no scroll-wheel adjustment (mode / acceleration / smart reel) for this mouse |
+| Naga V3 Pro | Contributor validated | Contributor validated | Wired USB `0x00E7`, 2.4 GHz receiver `0x00E8`, and Bluetooth `0x00E9`. DPI up to the published `50,000` ceiling with independent X/Y, three lighting zones, and every body button remappable, including both scroll-wheel buttons. The mouse's adjustable scroll-wheel settings (tactile / free-spin / smart-reel mode and its responsiveness levels) are not something OpenSnek can read or change: the firmware rejects the scroll-mode command pair and has no mode readout. They stay adjustable outside OpenSnek, with the front scroll button or Synapse on Windows; the rear scroll button does nothing by default. Onboard profile CRUD stays hidden because the device rejects metadata reads. Bluetooth includes the same eight lighting effects; poll rate remains USB-only |
 | Basilisk (2017) | Contributor validated | No | Contributor validated DPI (scalar, X/Y, live 5-stage table), poll-rate reads, and logo/scroll lighting; button remap not yet mapped |
 | Lancehead Tournament Edition | Contributor validated | No | Contributor validated DPI (scalar, X/Y, live 5-stage table), poll-rate reads, and all four lighting zones; button remap not yet mapped |
 | Huntsman Mini | Contributor validated | No | Keyboard: contributor validated backlight lighting and brightness. First non-mouse profile; key remap not supported |
 | Tartarus Pro | Contributor validated | No | Keypad: contributor validated backlight lighting and brightness. Analog actuation and key remap have no public protocol |
+| Mouse Dock | Contributor validated | No | Accessory: one logo LED with static color, brightness, and spectrum/pulse writes. No DPI, buttons, battery, or onboard profiles |
+| Mouse Dock Pro | Contributor validated | No | Accessory: one logo LED with brightness, static color, wave, spectrum, and breathing. Answers only transaction ID `0xFF` and reads brightness at a different address than it writes; per-cell custom frames are not mapped yet, so it has no software presets or Battery Meter (unlike the original Mouse Dock) |
 
 Status key:
 - `Validated` = supported and locally capture/test validated in OpenSnek

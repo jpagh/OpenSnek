@@ -358,14 +358,13 @@ public enum BLEVendorProtocol {
         return Data(bytes)
     }
 
-    public static func mergedStageSlots(currentSlots: [Int], requestedCount: Int, requestedValues: [Int], maximumDPI: Int = DeviceProfiles.defaultMaximumDPI) -> [Int] {
-        mergedStagePairs(currentPairs: currentSlots.map { DpiPair(x: $0, y: $0) }, requestedCount: requestedCount, requestedPairs: requestedValues.map { DpiPair(x: $0, y: $0) }, maximumDPI: maximumDPI).map(\.x)
+    public static func mergedStageSlots(currentSlots: [Int], requestedCount: Int, requestedValues: [Int], profileID: DeviceProfileID? = nil) -> [Int] {
+        mergedStagePairs(currentPairs: currentSlots.map { DpiPair(x: $0, y: $0) }, requestedCount: requestedCount, requestedPairs: requestedValues.map { DpiPair(x: $0, y: $0) }, profileID: profileID).map(\.x)
     }
 
-    public static func mergedStagePairs(currentPairs: [DpiPair], requestedCount: Int, requestedPairs: [DpiPair], maximumDPI: Int = DeviceProfiles.defaultMaximumDPI) -> [DpiPair] {
+    public static func mergedStagePairs(currentPairs: [DpiPair], requestedCount: Int, requestedPairs: [DpiPair], profileID: DeviceProfileID? = nil) -> [DpiPair] {
         let count = DeviceProfiles.clampDpiStageCount(requestedCount)
-        let maximum = max(DeviceProfiles.minimumDPI, maximumDPI)
-        let clamped = requestedPairs.map { pair in DpiPair(x: max(DeviceProfiles.minimumDPI, min(maximum, pair.x)), y: max(DeviceProfiles.minimumDPI, min(maximum, pair.y))) }
+        let clamped = requestedPairs.map { pair in DpiPair(x: DeviceProfiles.clampDPI(pair.x, profileID: profileID), y: DeviceProfiles.clampDPI(pair.y, profileID: profileID)) }
         var pairs = Array(currentPairs.prefix(DeviceProfiles.maximumDpiStageCount))
         if pairs.count < DeviceProfiles.maximumDpiStageCount { pairs += Array(repeating: clamped.first ?? DpiPair(x: 800, y: 800), count: DeviceProfiles.maximumDpiStageCount - pairs.count) }
 
@@ -378,19 +377,18 @@ public enum BLEVendorProtocol {
         return Array(pairs.prefix(DeviceProfiles.maximumDpiStageCount))
     }
 
-    public static func buildDpiStagePayload(active: Int, count: Int, slots: [Int], marker: UInt8, stageIDs: [UInt8]? = nil, maximumDPI: Int = DeviceProfiles.defaultMaximumDPI) -> Data {
-        buildDpiStagePayload(active: active, count: count, pairs: slots.map { DpiPair(x: $0, y: $0) }, marker: marker, stageIDs: stageIDs, maximumDPI: maximumDPI)
+    public static func buildDpiStagePayload(active: Int, count: Int, slots: [Int], marker: UInt8, stageIDs: [UInt8]? = nil, profileID: DeviceProfileID? = nil) -> Data {
+        buildDpiStagePayload(active: active, count: count, pairs: slots.map { DpiPair(x: $0, y: $0) }, marker: marker, stageIDs: stageIDs, profileID: profileID)
     }
 
-    public static func buildDpiStagePayload(active: Int, count: Int, pairs: [DpiPair], marker: UInt8, stageIDs: [UInt8]? = nil, maximumDPI: Int = DeviceProfiles.defaultMaximumDPI) -> Data {
+    public static func buildDpiStagePayload(active: Int, count: Int, pairs: [DpiPair], marker: UInt8, stageIDs: [UInt8]? = nil, profileID: DeviceProfileID? = nil) -> Data {
         let clippedCount = DeviceProfiles.clampDpiStageCount(count)
         let defaultStageIDs = (0..<DeviceProfiles.maximumDpiStageCount).map(UInt8.init)
         var ids = Array((stageIDs ?? defaultStageIDs).prefix(DeviceProfiles.maximumDpiStageCount))
         while ids.count < DeviceProfiles.maximumDpiStageCount { ids.append(ids.last.map { $0 &+ 1 } ?? UInt8(ids.count)) }
         let activeIndex = max(0, min(clippedCount - 1, active))
         var out = Data([ids[activeIndex], UInt8(clippedCount)])
-        let maximum = max(DeviceProfiles.minimumDPI, maximumDPI)
-        let clamped = pairs.map { pair in DpiPair(x: max(DeviceProfiles.minimumDPI, min(maximum, pair.x)), y: max(DeviceProfiles.minimumDPI, min(maximum, pair.y))) }
+        let clamped = pairs.map { pair in DpiPair(x: DeviceProfiles.clampDPI(pair.x, profileID: profileID), y: DeviceProfiles.clampDPI(pair.y, profileID: profileID)) }
 
         for i in 0..<5 {
             let pair = clamped[min(i, max(0, clamped.count - 1))]
@@ -412,7 +410,7 @@ public enum BLEVendorProtocol {
 
     public static func buildButtonPayload(slot: UInt8, kind: ButtonBindingKind, hidKey: UInt8?, hidModifiers: UInt8 = 0, turboEnabled: Bool = false, turboRate: UInt16? = nil, clutchDPI: Int? = nil, profileID: DeviceProfileID? = nil) -> Data {
         let clampedTurboRate = max(UInt16(1), min(UInt16(0x00FF), turboRate ?? 0x008E))
-        if profileID == .nagaPro || profileID == .nagaV2Pro {
+        if profileID?.isNagaFamily == true {
             let draft = ButtonBindingDraft(kind: kind, hidKey: Int(hidKey ?? 0x04), hidModifiers: Int(hidModifiers), turboEnabled: turboEnabled, turboRate: Int(clampedTurboRate), clutchDPI: clutchDPI)
             return buildRawFunctionBlockPayload(slot: slot, functionBlock: ButtonBindingSupport.usbFunctionBlockForWrite(slot: Int(slot), draft: draft, profileID: profileID))
         }
@@ -475,6 +473,14 @@ public enum BLEVendorProtocol {
         case .pulseSingle: return [0x01, ledID, 0x02, 0x01, 0x00, 0x01, UInt8(effect.primary.r), UInt8(effect.primary.g), UInt8(effect.primary.b)]
         case .pulseDual: return [0x01, ledID, 0x02, 0x02, 0x00, 0x02, UInt8(effect.primary.r), UInt8(effect.primary.g), UInt8(effect.primary.b), UInt8(effect.secondary.r), UInt8(effect.secondary.g), UInt8(effect.secondary.b)]
         }
+    }
+
+    /// Naga V3 Pro BLE zone-state effects omit USB's storage/LED prefix and pad to ten bytes.
+    /// Off is an effect write, not brightness zero, so returning to Static preserves brightness.
+    public static func buildBluetoothZoneEffectPayload(effect: LightingEffectPatch) -> Data {
+        let effectBytes = Array(buildScrollLEDEffectArgs(effect: effect).dropFirst(2))
+        let minimumPayloadLength = 10
+        return Data(effectBytes + Array(repeating: 0, count: max(0, minimumPayloadLength - effectBytes.count)))
     }
 
     public static func parseLightingLEDIDs(blob: Data) -> [UInt8]? {

@@ -573,10 +573,16 @@ extension BridgeClient {
 
     func setScrollLEDEffect(_ session: USBHIDControlSession, _ device: MouseDevice, effect: LightingEffectPatch, ledIDs: [UInt8]? = nil) throws -> Bool {
         var wroteAny = false
-        for ledID in usbLightingLEDIDs(for: device, override: ledIDs) {
+        let targets = usbLightingLEDIDs(for: device, override: ledIDs)
+        AppLog.debug("Bridge", "setScrollLEDEffect device=\(device.id) kind=\(effect.kind.rawValue) requested=\(ledIDs.map { $0.map(String.init).joined(separator: ",") } ?? "nil") targets=\(targets.map(String.init).joined(separator: ","))")
+        for ledID in targets {
             let args = BLEVendorProtocol.buildScrollLEDEffectArgs(effect: effect, ledID: ledID)
-            guard let r = try perform(session, device, classID: 0x0F, cmdID: 0x02, size: UInt8(max(0, min(255, args.count))), args: args), r[0] == 0x02 else { return false }
+            guard let r = try perform(session, device, classID: 0x0F, cmdID: 0x02, size: UInt8(max(0, min(255, args.count))), args: args), r[0] == 0x02 else {
+                AppLog.debug("Bridge", "setScrollLEDEffect led=0x\(String(format: "%02x", ledID)) FAILED args=\(args.map { String(format: "%02x", $0) }.joined(separator: " "))")
+                return false
+            }
             if usbDeviceProfile(for: device)?.usbLightingEffectReadLEDID != nil { guard let observed = try getLightingEffect(session, device), USBHIDProtocol.lightingEffect(observed, matches: effect) else { return false } }
+            AppLog.debug("Bridge", "setScrollLEDEffect led=0x\(String(format: "%02x", ledID)) ok")
             wroteAny = true
         }
         return wroteAny
