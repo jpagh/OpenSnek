@@ -45,6 +45,10 @@ Thumbs.db
 *.exe
 gatt_enumeration_results.json
 
+# Private Windows capture inputs; publish only reviewed, sanitized derivatives.
+/v4-capture-kit/
+/OpenSnek-Windows-V4-Capture-Kit.zip
+
 # SwiftPM build artifacts
 OpenSnek/.build/
 OpenSnek/.dist/

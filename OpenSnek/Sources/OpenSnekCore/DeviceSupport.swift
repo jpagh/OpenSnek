@@ -345,6 +345,12 @@ public struct DeviceProfile: Hashable, Sendable {
     /// Zone-state color/brightness addressing differs from the older global frame family.
     public var usesBluetoothZoneStateLighting: Bool { transport == .bluetooth && (id.isBasiliskV3ProFamily || id == .nagaV2Pro || id == .basiliskV4Hyperspeed) }
 
+    /// Synapse's receiver keyboard turbo block stores an interval in milliseconds.
+    public var usesMillisecondUSBButtonTurboRate: Bool { transport == .usb && id == .basiliskV4Hyperspeed }
+
+    /// Newly mapped receiver controls require exact normal-layer readback, not ACK alone.
+    public func requiresVerifiedUSBButtonWrite(slot: Int) -> Bool { transport == .usb && id == .basiliskV4Hyperspeed && DeviceProfiles.basiliskV4ReceiverExtraButtonSlots.contains(where: { $0.slot == slot }) }
+
     /// Changed-write/readback and raw-original restore are validated only on V4 BLE.
     public var supportsBluetoothLowBatteryThresholdControls: Bool { transport == .bluetooth && id == .basiliskV4Hyperspeed }
 }
@@ -463,11 +469,18 @@ public enum DeviceProfiles {
 
     public static let basiliskV4ButtonSlots: [ButtonSlotDescriptor] = basiliskV3XButtonSlots.filter { $0.slot != 96 } + basiliskV3FamilyButtonSlots.filter { [52, 53].contains($0.slot) }
 
+    // Configuration slots from the Windows receiver capture, not passive HID key IDs.
+    public static let basiliskV4ReceiverExtraButtonSlots: [ButtonSlotDescriptor] = [
+        ButtonSlotDescriptor(slot: 14, friendlyName: "Bottom / Profile Button", defaultKind: .default), ButtonSlotDescriptor(slot: 57, friendlyName: "Hypershift Clutch", defaultKind: .default), ButtonSlotDescriptor(slot: 128, friendlyName: "AI Prompt Master", defaultKind: .default)
+    ]
+
+    public static let basiliskV4ReceiverButtonSlots = basiliskV4ButtonSlots + basiliskV4ReceiverExtraButtonSlots
+
     // Receiver-only bring-up: do not inherit V3 lighting, scroll, or profile commands.
     public static let basiliskV4USB = DeviceProfile(
-        id: .basiliskV4Hyperspeed, productName: "Basilisk V4 HyperSpeed", transport: .usb, supportedProducts: [0x00EA], usbTransactionID: 0x1F, buttonLayout: ButtonSlotLayout(visibleSlots: basiliskV4ButtonSlots, writableSlots: basiliskV4ButtonSlots.map(\.slot)),
+        id: .basiliskV4Hyperspeed, productName: "Basilisk V4 HyperSpeed", transport: .usb, supportedProducts: [0x00EA], usbTransactionID: 0x1F, buttonLayout: ButtonSlotLayout(visibleSlots: basiliskV4ReceiverButtonSlots, writableSlots: basiliskV4ReceiverButtonSlots.map(\.slot)),
         supportsAdvancedLightingEffects: true, supportedLightingEffects: [.off, .staticColor, .spectrum, .wave, .pulseRandom, .pulseSingle, .pulseDual], usbLightingLEDIDs: [0x0A], usbLightingZones: [USBLightingZoneDescriptor(id: "underglow", label: "Underglow", ledIDs: [0x0A])],
-        supportsIndependentXYDPI: false, supportsLightingBrightnessControls: true, supportsLightingStateReads: true, supportsPollRateControls: false, usbLightingEffectReadLEDID: 0x0A)
+        supportsIndependentXYDPI: false, supportsLightingBrightnessControls: true, supportsLightingStateReads: true, usbLightingEffectReadLEDID: 0x0A, usbPollRateProtocol: .profileScoped, supportedPollRates: [500, 1000])
 
     // Wired exchanges are validated independently; polling uses the extended register.
     public static let basiliskV4WiredUSB = DeviceProfile(

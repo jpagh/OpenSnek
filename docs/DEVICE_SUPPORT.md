@@ -67,11 +67,22 @@ single/dual-color Pulse. Effect reads hydrate the UI from the device; the origin
 cycling effect read as Spectrum. Changed writes require one strict authoritative
 readback. Reactive register reads matched writes but physical rendering failed,
 so Reactive is excluded from both the picker and saved/backend patches. Software
-frames are not claimed. AI Prompt Master and Hypershift remain unmapped, not absent:
-passive input and candidate register reads did not establish safe button identities.
-A Windows Synapse USB capture is required before exposing those remaps. Poll-rate
-controls on the receiver, scroll-mode controls, profile management, and Bluetooth
-are not claimed. Wired `0x00EB` independently supports 125/250/500/1000 Hz polling
+frames are not claimed. Windows Synapse captures now map receiver-only normal-layer
+AI Prompt Master (`0x80`), Hypershift Clutch (`0x39`), and bottom/profile (`0x0E`)
+remapping, including native Default write bytes. These three controls are **Mapped**;
+macOS changed-write/readback/restore and physical validation remain pending. App and
+probe require same-bank readback: exact function bytes except for the captured
+Hypershift Default write/read representation. Normal AI stored flags and both wheel
+tilt Default layouts hydrate correctly. Receiver turbo timing uses millisecond
+intervals (captured 12/s = 83 ms), with a representable 4..20/s picker. Shifted-layer
+editing, macOS AI integration, and assigning native Hypershift to other buttons
+are not added. See
+[Windows evidence](../captures/usb/2026-10-20-basilisk-v4-windows/README.md).
+Full raw-USB decoding also establishes changed/restored receiver polling readbacks:
+**Mapped** 500/1000 Hz controls use `00:0E/8E`, not wired `00:40/C0`. The 125 Hz
+code remains uncaptured and hidden. Profile inventory/metadata reads and Smart
+Dimming write candidates are documented, but profile CRUD, Smart Dimming controls,
+and scroll-mode controls remain unclaimed. Wired `0x00EB` independently supports 125/250/500/1000 Hz polling
 through extended `00:C0/40` registers; standard `00:85` rejects. Wired DPI/stages, battery/power, all nine standard/tilt bindings, brightness and
 seven lighting modes were separately tested through app apply/readback with exact
 original restoration. The owner confirmed the wired UI, original button/tilt

@@ -31,7 +31,7 @@ Support is transport-specific. A mouse may be supported over USB, Bluetooth, or 
 
 | Device | USB | Bluetooth | Notes |
 |---|---|---|---|
-| Basilisk V4 HyperSpeed | Validated (receiver and wired) | Validated (limited) | Bluetooth `0x00EC` maps DPI reads, battery, sleep/low-battery controls, nine standard/tilt bindings, and underglow brightness. DPI writes, persistence, charging semantics, color/effects, AI/Hypershift, poll rate, profiles, and scroll controls remain untested or unmapped. Wired `0x00EB` independently supports the same validated controls plus 125/250/500/1000 Hz polling; receiver polling remains unmapped |
+| Basilisk V4 HyperSpeed | Validated (receiver and wired) | Validated (limited) | Bluetooth `0x00EC` maps DPI reads, battery, sleep/low-battery controls, nine standard/tilt bindings, and underglow brightness. DPI writes, persistence, charging semantics, color/effects, AI/Hypershift, poll rate, profiles, and scroll controls remain untested or unmapped. Wired `0x00EB` independently supports the same validated controls plus 125/250/500/1000 Hz polling; Windows captures additionally map receiver-only 500/1000 Hz polling, AI/Hypershift/bottom-button remaps, Default representations and turbo timing with strict readback; macOS validation of these additions is pending |
 | Basilisk V3 X HyperSpeed | Validated | Validated | |
 | Basilisk V3 | Mapped | No | OpenRazer-backed USB profile, sharing the Basilisk V3 USB family configuration with a `26,000` DPI ceiling |
 | Basilisk V3 Pro | Validated | Validated | |

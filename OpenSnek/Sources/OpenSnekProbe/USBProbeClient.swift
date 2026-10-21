@@ -360,6 +360,10 @@ final class USBProbeClient: @unchecked Sendable {
 
     func writeButtonFunction(profile: UInt8, slot: UInt8, hypershift: UInt8 = 0x00, functionBlock: [UInt8]) throws -> Bool {
         guard functionBlock.count == 7 else { throw ProbeError.usage("Function block must be exactly 7 bytes") }
+        if let deviceProfile = self.profile, deviceProfile.requiresVerifiedUSBButtonWrite(slot: Int(slot)) {
+            let request = USBHIDProtocol.ButtonBindingWrite(profile: profile, slot: slot, hypershift: hypershift, functionBlock: functionBlock)
+            return try session.withExclusiveDeviceAccess { try USBHIDProtocol.performVerifiedButtonWrite(request, profileID: deviceProfile.id) { command, args in try self.session.perform(classID: 2, cmdID: command, size: 10, args: args, responseAttempts: 12, responseDelayUs: 40_000) } }
+        }
         let args = [profile, slot, hypershift] + functionBlock
         guard let response = try session.perform(classID: 0x02, cmdID: 0x0C, size: UInt8(args.count), args: args, responseAttempts: 12, responseDelayUs: 40_000) else { return false }
         return response[0] == 0x02
@@ -370,7 +374,11 @@ final class USBProbeClient: @unchecked Sendable {
         let functionBlock = ButtonBindingSupport.buildUSBFunctionBlock(slot: request.slot, kind: bindingKind, hidKey: request.hidKey, turboEnabled: request.turboEnabled && bindingKind.supportsTurbo, turboRate: request.turboRate, clutchDPI: request.clutchDPI, profileID: profileID)
         let clampedSlot = UInt8(max(0, min(255, request.slot)))
         var wroteAny = false
-        for profile in request.profiles where try writeButtonFunction(profile: profile, slot: clampedSlot, functionBlock: functionBlock) { wroteAny = true }
+        for target in request.profiles {
+            let wrote = try writeButtonFunction(profile: target, slot: clampedSlot, functionBlock: functionBlock)
+            if profile?.requiresVerifiedUSBButtonWrite(slot: request.slot) == true, !wrote { return false }
+            wroteAny = wroteAny || wrote
+        }
         return wroteAny
     }
 

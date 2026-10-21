@@ -646,7 +646,11 @@ import OpenSnekCore
 
     func buttonBindingTurboEnabled(for slot: Int) -> Bool { editorController.buttonBindingTurboEnabled(for: slot) }
 
-    func buttonBindingTurboRatePressesPerSecond(for slot: Int) -> Int { ButtonBindingSupport.turboRawToPressesPerSecond(editorController.buttonBindingTurboRate(for: slot)) }
+    private var buttonTurboProfile: DeviceProfile? { deviceStore.selectedDevice.flatMap { DeviceProfiles.resolve(vendorID: $0.vendor_id, productID: $0.product_id, transport: $0.transport) } }
+
+    var buttonTurboPressesPerSecondRange: ClosedRange<Int> { ButtonBindingSupport.turboPressesPerSecondRange(profile: buttonTurboProfile) }
+
+    func buttonBindingTurboRatePressesPerSecond(for slot: Int) -> Int { ButtonBindingSupport.turboRawToPressesPerSecond(editorController.buttonBindingTurboRate(for: slot), profile: buttonTurboProfile) }
 
     func buttonBindingHidKey(for slot: Int) -> Int { editorController.buttonBindingHidKey(for: slot) }
 
@@ -660,10 +664,7 @@ import OpenSnekCore
 
     func updateButtonBindingTurboEnabled(slot: Int, enabled: Bool) { editorController.updateButtonBindingTurboEnabled(slot: slot, enabled: enabled) }
 
-    func updateButtonBindingTurboPressesPerSecond(slot: Int, pressesPerSecond: Int) {
-        let clamped = max(1, min(20, pressesPerSecond))
-        editorController.updateButtonBindingTurboRate(slot: slot, rate: ButtonBindingSupport.turboPressesPerSecondToRaw(clamped))
-    }
+    func updateButtonBindingTurboPressesPerSecond(slot: Int, pressesPerSecond: Int) { editorController.updateButtonBindingTurboRate(slot: slot, rate: ButtonBindingSupport.turboPressesPerSecondToRaw(pressesPerSecond, profile: buttonTurboProfile)) }
 
     func updateButtonBindingClutchDPI(slot: Int, dpi: Int) { editorController.updateButtonBindingClutchDPI(slot: slot, dpi: dpi) }
 }

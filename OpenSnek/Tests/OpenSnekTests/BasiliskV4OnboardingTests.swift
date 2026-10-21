@@ -27,14 +27,15 @@ import OpenSnekHardware
         XCTAssertEqual(ButtonBindingSupport.defaultUSBFunctionBlock(for: 52, profileID: profile.id), [0x0E, 1, 0x68, 0, 0x14, 0, 0])
         XCTAssertEqual(ButtonBindingSupport.defaultUSBFunctionBlock(for: 53, profileID: profile.id), [0x0E, 1, 0x69, 0, 0x14, 0, 0])
         XCTAssertTrue(profile.supportsDPIControls)
-        XCTAssertFalse(profile.supportsPollRateControls)
+        XCTAssertTrue(profile.supportsPollRateControls)
+        XCTAssertEqual(profile.supportedPollRates, [500, 1000])
         XCTAssertFalse(profile.supportsScrollModeControls)
         XCTAssertTrue(profile.supportsLightingBrightnessControls)
         XCTAssertEqual(profile.supportedLightingEffects, LightingEffectKind.allCases.filter { $0 != .reactive })
         XCTAssertEqual(profile.usbLightingEffectReadLEDID, 0x0A)
         XCTAssertFalse(profile.supportsMappedOnboardProfileCRUD)
         XCTAssertNil(DeviceProfiles.resolve(vendorID: 0x1532, productID: 0x00EA, transport: .bluetooth))
-        XCTAssertEqual(profile.buttonLayout.writableSlots, [1, 2, 3, 4, 5, 9, 10, 52, 53])
+        XCTAssertEqual(profile.buttonLayout.writableSlots, [1, 2, 3, 4, 5, 9, 10, 14, 52, 53, 57, 128])
     }
 
     // Legacy test name is retained for journal recovery; exact device scope selects receiver or wired.

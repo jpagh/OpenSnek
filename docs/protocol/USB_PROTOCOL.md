@@ -14,8 +14,25 @@ and verified exact live/persistent restoration. The profile ceiling is the vendo
 Button slots 1,2,3,4,5,9,10,52,53 round-trip right-click and Default through
 `02:0C/8C` on persistent target 1 and live target 0. Tilt defaults are
 `0e 01 68 00 14 00 00` / `0e 01 69 00 14 00 00`. Extra-slot success frames do
-not establish valid bindings: candidate AI/Hypershift/profile payloads remain
-unmapped and must not be exposed or rewritten on that evidence alone.
+not establish valid bindings by themselves. Subsequent Windows Synapse evidence
+maps three additional receiver slots: bottom/profile `0x0E`, Hypershift Clutch
+`0x39`, and AI Prompt Master `0x80`. Their normal-layer defaults are respectively
+`07 01 04 00 00 00 00`, `0C 01 01 00 00 00 00` (official write), and all zero.
+Onboard reads use the flag-bearing layout at response bytes 11..17; normal-layer
+selectors/status/class/command/size are checked, with no guessed flagless fallback.
+App/probe writes to these controls require one same-bank/slot readback under
+exclusive device access. Function bytes match exactly except for the captured
+normal-layer Hypershift Default write `0C 01 01` → read `0C 01 39` representation.
+Reconnect reads establish that normal AI Default can return stored flag 1; retain
+the fixed function offset rather than guessing a flagless layout. Receiver wheel
+tilt also reads/writes `0E 03 68/69 00 14 00 00`; both captured length-1 and
+length-3 defaults hydrate as Default. Keyboard turbo `0D 04 00 4B/4E 00 53 00`
+is 83 ms / 12 presses per second, not the older linear UI rate mapping. Receiver
+UI timing uses millisecond intervals within the existing raw clamp (4..20/s).
+These additions are **Mapped**, not macOS runtime validated. Shifted-layer editing
+remains hidden. See
+[Windows evidence and limits](../../captures/usb/2026-10-20-basilisk-v4-windows/README.md).
+No default AI host integration or native Hypershift action on other buttons is added.
 
 Underglow brightness uses `0F:84/04`, args `01 0A <value>`; original raw 85 was
 changed to 128, read back, restored, and physically confirmed. LED targets `01`
@@ -36,7 +53,13 @@ bytes, not route restoration through editor clamps. Initial failed restoration,
 raw recovery, corrected test passes, and restored journals are retained in
 [the evidence directory](../../captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md).
 Receiver poll reads `00:85`, exploratory `00:8B`, and newer `00:C0` returned
-status `05` while DPI reads succeeded; receiver polling controls stay disabled.
+status `05` while DPI reads succeeded. Windows Synapse later captured `00:0E`
+size-2 writes `01 02` for 500 Hz and `01 01` for original 1000 Hz, bracketed by
+`00:8E 01 00` queries returning `01 01` → `01 02` → `01 01` across change and
+restore. These authoritative responses were missed by the original checker, which
+omitted raw control-IN payloads. Receiver polling is mapped through the separate
+profile-scoped `00:0E/8E` family, bank 1, with strict changed-value readback.
+Only 500/1000 Hz are offered; no 125 Hz code, measured cadence or persistence claim.
 The separately discovered wired identity `00EB` independently validates DPI,
 power, nine standard/tilt bindings, and the same underglow brightness/seven-mode
 effect surface, plus extended polling described below. Wired stage transitions

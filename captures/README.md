@@ -4,6 +4,14 @@ This directory stores BLE protocol captures used to derive and validate `tools/p
 
 ## Layout
 
+- `usb/2026-10-20-basilisk-v4-windows/`
+  - Sanitized Windows 11/Synapse receiver evidence for AI `0x80`, Hypershift
+    `0x39`, and bottom/profile `0x0E` mappings, onboard readbacks, and standalone
+    keyboard behavior. Full raw-USB audit adds authoritative receiver 500/1000 Hz
+    polling change/restore queries, native Default layouts, turbo timing, and
+    profile/Smart Dimming research limits. Exact sanitized report fixtures are
+    included; raw private captures are not imported.
+
 - `usb/2026-10-18-basilisk-v4-hyperspeed/`
   - Supplied receiver `1532:00EA` bring-up: read-only discovery, scoped DPI transitions,
     nine standard/tilt button remap and Default round-trips, power and underglow

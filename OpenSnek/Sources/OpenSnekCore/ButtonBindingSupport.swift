@@ -14,6 +14,9 @@ public enum ButtonBindingSupport {
     private static let horizontalScrollRightButtonID: UInt8 = 0x69
     private static let basiliskV3FamilyHorizontalScrollTurboRate = 0x14
 
+    // Normal-layer receiver read, captured before Synapse rewrites Default as `0C 01 01`.
+    private static let basiliskV4HypershiftDefaultRead: [UInt8] = [0x0C, 0x01, 0x39, 0, 0, 0, 0]
+
     // Naga Pro USB wheel tilt reuses the vertical scroll button IDs (0x09/0x0A) inside the same class-0x0E block.
     private static let nagaProHorizontalScrollLeftButtonID: UInt8 = 0x09
     private static let nagaProHorizontalScrollRightButtonID: UInt8 = 0x0A
@@ -99,7 +102,7 @@ public enum ButtonBindingSupport {
     // The Naga family writes wheel tilt as a class-0x0E horizontal-scroll block. The Naga V2 Pro
     // accepts both the firmware-native length-0x01 block and the turbo length-0x03 block; remaps use
     // the same turbo-capable form as the Basilisk family, which the attached device round-trips.
-    private static func supportsTurboHorizontalScrollBlocks(_ profileID: DeviceProfileID?) -> Bool { isBasiliskV3Family(profileID) || profileID == .nagaPro || profileID == .nagaV2Pro }
+    private static func supportsTurboHorizontalScrollBlocks(_ profileID: DeviceProfileID?) -> Bool { isBasiliskV3Family(profileID) || profileID == .basiliskV4Hyperspeed || profileID == .nagaPro || profileID == .nagaV2Pro }
 
     private static func isBasiliskV3Family(_ profileID: DeviceProfileID?) -> Bool {
         switch profileID {
@@ -162,10 +165,19 @@ public enum ButtonBindingSupport {
         return buildUSBFunctionBlock(slot: slot, kind: resolved.kind, hidKey: resolved.hidKey, hidModifiers: resolved.hidModifiers, turboEnabled: resolved.turboEnabled && resolved.kind.supportsTurbo, turboRate: resolved.turboRate, clutchDPI: resolved.clutchDPI, profileID: profileID)
     }
 
+    /// V4 Hypershift Default has distinct captured write/read forms; other writes match exactly.
+    public static func usbFunctionBlockMatchesReadback(slot: Int, expected: [UInt8], readback: [UInt8], profileID: DeviceProfileID?) -> Bool {
+        if expected.count == 7, expected == readback { return true }
+        guard profileID == .basiliskV4Hyperspeed, slot == 57, expected == defaultUSBFunctionBlock(for: slot, profileID: profileID) else { return false }
+        return readback == basiliskV4HypershiftDefaultRead
+    }
+
     public static func buttonBindingDraftFromUSBFunctionBlock(slot: Int, functionBlock: [UInt8], profileID: DeviceProfileID? = nil) -> ButtonBindingDraft? {
         guard functionBlock.count == 7 else { return nil }
 
-        if let defaultBlock = defaultUSBFunctionBlock(for: slot, profileID: profileID), functionBlock == defaultBlock { return defaultButtonBinding(for: slot, profileID: profileID) }
+        if let defaultBlock = defaultUSBFunctionBlock(for: slot, profileID: profileID), usbFunctionBlockMatchesReadback(slot: slot, expected: defaultBlock, readback: functionBlock, profileID: profileID) { return defaultButtonBinding(for: slot, profileID: profileID) }
+
+        if profileID == .basiliskV4Hyperspeed, let buttonID = defaultHorizontalScrollButtonID(forSlot: UInt8(clamping: slot)), functionBlock == basiliskV3FamilyHorizontalScrollBlock(buttonID: buttonID) { return defaultButtonBinding(for: slot, profileID: profileID) }
 
         if let semanticDefault = semanticDefaultButtonBinding(for: slot, profileID: profileID),
             functionBlock
@@ -226,6 +238,14 @@ public enum ButtonBindingSupport {
     public static func extractUSBFunctionBlock(response: [UInt8], profile: UInt8, slot: UInt8, hypershift: UInt8, profileID: DeviceProfileID? = nil) -> [UInt8]? {
         guard response.count >= 18, response[8] == profile, response[9] == slot else { return nil }
 
+        // Receiver reads retain a flag byte, but it is stored state, not a layer echo:
+        // even a normal AI Default request can return 1. Keep the fixed function offset
+        // and reject shifted requests rather than guessing a flagless layout.
+        if profileID == .basiliskV4Hyperspeed, DeviceProfiles.basiliskV4ReceiverExtraButtonSlots.contains(where: { $0.slot == Int(slot) }) {
+            guard response[0] == 0x02, response[5] == 0x0A, response[6] == 0x02, response[7] == 0x8C, hypershift == 0, response[10] <= 1 else { return nil }
+            return Array(response[11..<18])
+        }
+
         if usesExtendedBasiliskUSBReadLayout(profileID) { return Array(response[11..<18]) }
 
         // Naga Pro returns the stored layer flag at byte 10, which need not match the request.
@@ -242,16 +262,21 @@ public enum ButtonBindingSupport {
         return candidates.first
     }
 
-    public static func turboRawToPressesPerSecond(_ rawRate: Int) -> Int {
+    public static func turboPressesPerSecondRange(profile: DeviceProfile? = nil) -> ClosedRange<Int> { profile?.usesMillisecondUSBButtonTurboRate == true ? 4...maximumTurboPressesPerSecond : minimumTurboPressesPerSecond...maximumTurboPressesPerSecond }
+
+    public static func turboRawToPressesPerSecond(_ rawRate: Int, profile: DeviceProfile? = nil) -> Int {
         let raw = clampTurboRate(rawRate)
+        if profile?.usesMillisecondUSBButtonTurboRate == true { return clampTurboPressesPerSecond(Int((1000.0 / Double(raw)).rounded())) }
         let rawSpan = Double(maximumTurboRate - minimumTurboRate)
         let ppsSpan = Double(maximumTurboPressesPerSecond - minimumTurboPressesPerSecond)
         let scaled = Double(maximumTurboPressesPerSecond) - (Double(raw - minimumTurboRate) * ppsSpan / rawSpan)
         return clampTurboPressesPerSecond(Int(round(scaled)))
     }
 
-    public static func turboPressesPerSecondToRaw(_ pressesPerSecond: Int) -> Int {
-        let pps = clampTurboPressesPerSecond(pressesPerSecond)
+    public static func turboPressesPerSecondToRaw(_ pressesPerSecond: Int, profile: DeviceProfile? = nil) -> Int {
+        let range = turboPressesPerSecondRange(profile: profile)
+        let pps = max(range.lowerBound, min(range.upperBound, pressesPerSecond))
+        if profile?.usesMillisecondUSBButtonTurboRate == true { return clampTurboRate(Int((1000.0 / Double(pps)).rounded())) }
         let rawSpan = Double(maximumTurboRate - minimumTurboRate)
         let ppsSpan = Double(maximumTurboPressesPerSecond - minimumTurboPressesPerSecond)
         let scaled = Double(minimumTurboRate) + (Double(maximumTurboPressesPerSecond - pps) * rawSpan / ppsSpan)
@@ -328,7 +353,10 @@ public enum ButtonBindingSupport {
         case 53 where profileID == .nagaV2Pro || profileID == .basiliskV4Hyperspeed || profileID == .basiliskV4HyperspeedWired: return nagaV2ProNativeHorizontalScrollBlock(buttonID: horizontalScrollRightButtonID)
         // Bottom button factory block; cycles onboard profiles. Synapse rewrites the class-0x06
         // `06 01 06` form when the button is remapped to DPI-stage cycling.
-        case 14 where profileID == .nagaV2Pro: return [0x07, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00]
+        case 14 where profileID == .nagaV2Pro || profileID == .basiliskV4Hyperspeed: return [0x07, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00]
+        // Official Synapse normal-layer Default writes; Hypershift reads use `0C 01 39`.
+        case 57 where profileID == .basiliskV4Hyperspeed: return [0x0C, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00]
+        case 128 where profileID == .basiliskV4Hyperspeed: return [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
         case 96:
             switch profileID {
             case .basiliskV3, .basiliskV335K: return [0x04, 0x02, 0x0F, 0x7B, 0x00, 0x00, 0x00]
@@ -383,7 +411,8 @@ public enum ButtonBindingSupport {
         case .nagaPro: return DeviceProfiles.nagaProUSBButtonSlots
         case .nagaV2Pro: return DeviceProfiles.nagaV2ProUSBButtonSlots
         case .basilisk, .lanceheadTournamentEdition: return ButtonSlotDescriptor.defaults
-        case .basiliskV4Hyperspeed, .basiliskV4HyperspeedWired: return DeviceProfiles.basiliskV4ButtonSlots
+        case .basiliskV4Hyperspeed: return DeviceProfiles.basiliskV4ReceiverButtonSlots
+        case .basiliskV4HyperspeedWired: return DeviceProfiles.basiliskV4ButtonSlots
         case .huntsmanMini, .tartarusPro, .mouseDock: return []
         }
     }

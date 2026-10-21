@@ -644,7 +644,7 @@ private struct ButtonBindingTurboControls: View {
 
             if row.turboEnabled {
                 turboRateControls
-                ButtonBindingNoticeRow(notice: "Turbo rate: 1..20 presses per second")
+                ButtonBindingNoticeRow(notice: "Turbo rate: \(editorStore.buttonTurboPressesPerSecondRange.lowerBound)..\(editorStore.buttonTurboPressesPerSecondRange.upperBound) presses per second")
             }
         }
     }
@@ -659,8 +659,10 @@ private struct ButtonBindingTurboControls: View {
             Spacer()
             Text("Slow").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.62))
 
-            Slider(value: Binding(get: { Double(editorStore.buttonBindingTurboRatePressesPerSecond(for: row.slot)) }, set: { editorStore.updateButtonBindingTurboPressesPerSecond(slot: row.slot, pressesPerSecond: Int(round($0))) }), in: 1...20).frame(width: 140).disabled(!row.isEditable)
-                .accessibilityIdentifier("button-binding-turbo-rate-slider-\(row.slot)")
+            Slider(
+                value: Binding(get: { Double(editorStore.buttonBindingTurboRatePressesPerSecond(for: row.slot)) }, set: { editorStore.updateButtonBindingTurboPressesPerSecond(slot: row.slot, pressesPerSecond: Int(round($0))) }),
+                in: Double(editorStore.buttonTurboPressesPerSecondRange.lowerBound)...Double(editorStore.buttonTurboPressesPerSecondRange.upperBound)
+            ).frame(width: 140).disabled(!row.isEditable).accessibilityIdentifier("button-binding-turbo-rate-slider-\(row.slot)")
 
             Text("Fast").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.62))
 

@@ -13,7 +13,9 @@ import OpenSnekProtocols
         XCTAssertEqual(wired.usbPollRateProtocol, .extended)
         XCTAssertEqual(wired.supportedPollRates, [125, 250, 500, 1000])
         XCTAssertTrue(wired.supportsPollRateControls)
-        XCTAssertFalse(receiver.supportsPollRateControls)
+        XCTAssertTrue(receiver.supportsPollRateControls)
+        XCTAssertEqual(receiver.usbPollRateProtocol, .profileScoped)
+        XCTAssertEqual(receiver.supportedPollRates, [500, 1000])
         XCTAssertTrue(wired.supportsDPIControls)
         XCTAssertTrue(wired.supportsButtonRemapControls)
         XCTAssertTrue(wired.supportsPowerManagementControls)
@@ -54,6 +56,64 @@ import OpenSnekProtocols
         XCTAssertNil(USBHIDProtocol.pollRateWriteCommand(hz: 333, encoding: .extended))
         XCTAssertNil(USBHIDProtocol.pollRateWriteCommand(hz: 250, encoding: .standard))
         XCTAssertEqual(USBHIDProtocol.pollRateWriteCommand(hz: 1000, encoding: .standard)?.args, [1])
+    }
+
+    func testReceiverPollingUsesCapturedBankOneCommandsOnly() throws {
+        let read = USBHIDProtocol.pollRateReadCommand(encoding: .profileScoped)
+        XCTAssertEqual(read.commandID, 0x8E)
+        XCTAssertEqual(read.size, 2)
+        XCTAssertEqual(read.args, [1, 0])
+        let rates: [(Int, UInt8)] = [(500, 2), (1000, 1)]
+        for (hz, raw) in rates {
+            let write = try XCTUnwrap(USBHIDProtocol.pollRateWriteCommand(hz: hz, encoding: .profileScoped))
+            XCTAssertEqual(write.commandID, 0x0E)
+            XCTAssertEqual(write.args, [1, raw])
+            XCTAssertEqual(write.size, 2)
+            XCTAssertEqual(USBHIDProtocol.pollRate(from: receiverPollResponse(raw: raw), encoding: .profileScoped), hz)
+        }
+        for hz in [125, 250, 2000, 4000, 8000] { XCTAssertNil(USBHIDProtocol.pollRateWriteCommand(hz: hz, encoding: .profileScoped)) }
+        XCTAssertFalse(DeviceProfiles.basiliskV4Bluetooth.supportsPollRateControls)
+    }
+
+    func testReceiverPollingRejectsWrongCommandTargetAndUnknownCodes() {
+        let valid = receiverPollResponse(raw: 2)
+        let mutations: [(Int, UInt8)] = [(0, 5), (5, 1), (6, 2), (7, 0xC0), (8, 0), (8, 2), (9, 8), (9, 0)]
+        for (index, value) in mutations {
+            var invalid = valid
+            invalid[index] = value
+            XCTAssertNil(USBHIDProtocol.pollRate(from: invalid, encoding: .profileScoped))
+        }
+        XCTAssertNil(USBHIDProtocol.pollRate(from: Array(valid.prefix(9)), encoding: .profileScoped))
+        XCTAssertNil(USBHIDProtocol.pollRate(from: valid, encoding: .extended))
+        XCTAssertNil(USBHIDProtocol.pollRate(from: valid, encoding: .standard))
+    }
+
+    func testReceiverPollingWriteRequiresChangedReadbackWithoutRetries() throws {
+        for matches in [true, false] {
+            var commands: [UInt8] = []
+            let result = try USBHIDProtocol.performVerifiedPollRateWrite(hz: 500, encoding: .profileScoped) { command in
+                commands.append(command.commandID)
+                if command.commandID == 0x0E {
+                    XCTAssertEqual(command.args, [1, 2])
+                    return [2]
+                }
+                XCTAssertEqual(command.args, [1, 0])
+                return self.receiverPollResponse(raw: matches ? 2 : 1)
+            }
+            XCTAssertEqual(result, matches)
+            XCTAssertEqual(commands, [0x0E, 0x8E])
+        }
+        let result = try USBHIDProtocol.performVerifiedPollRateWrite(hz: 125, encoding: .profileScoped) { _ in
+            XCTFail("Uncaptured rate must not be written")
+            return nil
+        }
+        XCTAssertFalse(result)
+    }
+
+    private func receiverPollResponse(raw: UInt8) -> [UInt8] {
+        var response = USBHIDProtocol.createReport(txn: 20, classID: 0, cmdID: 0x8E, size: 2, args: [1, raw])
+        response[0] = 2
+        return response
     }
 
     func testHardwareWiredPollApplyReadbackAndExactRestore() async throws {

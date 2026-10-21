@@ -2,4 +2,5 @@
 public enum USBPollRateProtocol: String, Codable, Sendable {
     case standard
     case extended
+    case profileScoped
 }

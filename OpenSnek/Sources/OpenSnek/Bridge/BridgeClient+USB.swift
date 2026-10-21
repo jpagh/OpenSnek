@@ -13,12 +13,7 @@ extension BridgeClient {
     }
 
     /// Stores USB raw button binding write data.
-    struct USBRawButtonBindingWrite {
-        let profile: UInt8
-        let slot: UInt8
-        let hypershift: UInt8
-        let functionBlock: [UInt8]
-    }
+    typealias USBRawButtonBindingWrite = USBHIDProtocol.ButtonBindingWrite
 
     /// Stores USB button binding write data.
     struct USBButtonBindingWrite {
@@ -384,10 +379,10 @@ extension BridgeClient {
     func setPollRate(_ session: USBHIDControlSession, _ device: MouseDevice, value: Int) throws -> Bool {
         let profile = usbDeviceProfile(for: device)
         let encoding = profile?.usbPollRateProtocol ?? .standard
-        guard (profile?.supportedPollRates ?? [125, 500, 1000]).contains(value), let command = USBHIDProtocol.pollRateWriteCommand(hz: value, encoding: encoding) else { return false }
-        guard let response = try perform(session, device, classID: 0, cmdID: command.commandID, size: command.size, args: command.args), response[0] == 2 else { return false }
-        if encoding == .standard { return true }
-        return try getPollRate(session, device) == value
+        guard (profile?.supportedPollRates ?? [125, 500, 1000]).contains(value) else { return false }
+        if encoding != .standard { return try session.withExclusiveDeviceAccess { try USBHIDProtocol.performVerifiedPollRateWrite(hz: value, encoding: encoding) { command in try self.perform(session, device, classID: 0, cmdID: command.commandID, size: command.size, args: command.args) } } }
+        guard let command = USBHIDProtocol.pollRateWriteCommand(hz: value, encoding: encoding), let response = try perform(session, device, classID: 0, cmdID: command.commandID, size: command.size, args: command.args) else { return false }
+        return response[0] == 2
     }
 
     func getIdleTime(_ session: USBHIDControlSession, _ device: MouseDevice) throws -> Int? {
@@ -686,6 +681,9 @@ extension BridgeClient {
 
     func setButtonBindingUSBRaw(_ session: USBHIDControlSession, _ device: MouseDevice, request: USBRawButtonBindingWrite) throws -> Bool {
         guard request.functionBlock.count == 7 else { return false }
+        if let profile = usbDeviceProfile(for: device), profile.requiresVerifiedUSBButtonWrite(slot: Int(request.slot)) {
+            return try session.withExclusiveDeviceAccess { try USBHIDProtocol.performVerifiedButtonWrite(request, profileID: profile.id) { command, args in try self.perform(session, device, classID: 0x02, cmdID: command, size: 0x0A, args: args, responseAttempts: 12, responseDelayUs: 40_000) } }
+        }
         let args = [request.profile, request.slot, request.hypershift] + request.functionBlock
         guard let r = try perform(session, device, classID: 0x02, cmdID: 0x0C, size: UInt8(args.count), args: args, responseAttempts: 12, responseDelayUs: 40_000) else { return false }
         return r[0] == 0x02

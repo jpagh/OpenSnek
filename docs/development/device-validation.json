@@ -31,7 +31,7 @@
         "power_management": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/extended-restored.json"]},
         "lighting_brightness": {"status": "maintainer_validated", "source": "Local hardware, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/extended-defaults-pass.txt"]},
         "independent_xy": {"status": "not_tested"},
-        "poll_rate": {"status": "unsupported"},
+        "poll_rate": {"status": "mapped", "source": "Jack, Windows Synapse capture, 2026-10-20; raw-USB audit 2026-10-21", "evidence": ["captures/usb/2026-10-20-basilisk-v4-windows/README.md", "captures/usb/2026-10-20-basilisk-v4-windows/feature-exchanges.json"]},
         "advanced_lighting_effects": {"status": "maintainer_validated", "source": "Local hardware and physical confirmation, Jack, 2026-10-18", "evidence": ["captures/usb/2026-10-18-basilisk-v4-hyperspeed/README.md", "captures/usb/2026-10-18-basilisk-v4-hyperspeed/app-lighting-effects-validation.txt"]},
         "onboard_profiles": {"status": "unsupported"},
         "software_lighting": {"status": "unsupported"},
@@ -39,7 +39,8 @@
       },
       "limitations": [
         "This record covers the supplied 2.4 GHz receiver only; wired 0x00EB and Bluetooth 0x00EC have separately scoped validation records.",
-        "Nine standard and tilt slots only; AI Prompt Master and Hypershift remain unmapped.",
+        "Button maintainer validation covers nine standard/tilt slots. Receiver AI (0x80), Hypershift (0x39), and bottom/profile (0x0E) are additionally mapped from Windows Synapse evidence in captures/usb/2026-10-20-basilisk-v4-windows/README.md, not macOS hardware validated. New writes require same-bank readback, exact except for the captured normal-layer Hypershift Default write/read representation. Stored flags, wheel Default variants and millisecond turbo timing are mapped; shifted editing remains hidden.",
+        "Receiver polling 00:0E/8E has captured authoritative 1000-to-500-to-1000 readbacks and is mapped for 500/1000 Hz only. No 125 Hz code, physical cadence, persistence or macOS hardware-validation claim. Original checker summaries missed raw control-IN responses.",
         "Underglow brightness, off/static/spectrum/wave/pulse supported; Reactive readback succeeds but failed physical validation and is hidden. No software streaming.",
         "No persistence, charging-transition, closed-window service, or sleep/wake validation.",
         "33K ceiling follows vendor specification; high-DPI writes and independent X/Y were not tested."
